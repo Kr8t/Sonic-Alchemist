@@ -17,7 +17,33 @@ const MOODS = [
   "SANDTON PENTHOUSE LUSH",
   "MAMELODI BACARDI STREETS",
   "DURBAN HARBOR AMBIENCE",
-  "ORBITAL ANCESTRAL VOID"
+  "ORBITAL ANCESTRAL VOID",
+  "MABONENG ROOFTOP HAZE",
+  "SUNNYSIDE DUSTY VIBE",
+  "UMHLANGA NEON BREEZE",
+  "DRAKENSBERG ECHO CLOUDS",
+  "MELANCHOLIC PIANO VOID",
+  "ECSTATIC TRIBAL ENERGY",
+  "DEEP THOUGHT MINIMALISM",
+  "HUMID TAXI RANK PULSE",
+  "CRISP APARTHEID GHOSTS",
+  "FUTURISTIC KWAITO NOSTALGIA",
+  "CYBERNETIC TOWNSHIP FEVER",
+  "LIQUID GOLDEN HOUR",
+  "STEELY UNDERGROUND HEAT",
+  "LO-FI CASSETTE TEXTURES",
+  "HIGH-GLOSS TECHNO SHINE",
+  "ORGANIC SOIL RESONANCE",
+  "HYPNOTIC LIMPOPO NIGHTS",
+  "VAPORWAVE MALL AMBIENCE",
+  "SUNKISSED SHAKY PULSE",
+  "NEON-LIT TAXI INTERIOR",
+  "ABSTRACT FOLEY LANDSCAPE",
+  "DREAMY PRETORIA GARDEN",
+  "SUBMERGED AQUATIC BASS",
+  "SPACED-OUT SYNTH WAVE",
+  "CHROME-PLATED AFRO BEAT",
+  "HAZY LATE NIGHT LOUNGE"
 ];
 
 const INSTRUMENTS = [
@@ -32,20 +58,68 @@ const INSTRUMENTS = [
   "GRANULAR NATURE SOUNDS",
   "TRIBAL CHANTS / WATER",
   "METALLIC SHELF PERC",
-  "GHOST KICKS / TICK-TOCK"
+  "GHOST KICKS / TICK-TOCK",
+  "909-STYLE ANALOG HATS",
+  "TAPE-HISS ATMOSPHERE",
+  "OPERATOR FM SYNTHS",
+  "DETUNED RHODES KEYS",
+  "LASER-CUT LEAD STABS",
+  "TRADITIONAL DJEMBE TAP",
+  "PLUCKY MARIMBA TEXTURE",
+  "DISTORTED WHISTLE ECHO",
+  "SQUARE-WAVE SGIJA LEAD",
+  "BIT-REDUCED RIMSHOTS",
+  "REVERB-SOAKED HUMS",
+  "TRANSIENT-RICH WOODBLOCK",
+  "PULSATING 303 ACID LINE",
+  "FILTERED CROWD NOISE",
+  "HOLLOW WOODEN PLUCKS",
+  "BRASSY SYNTH SWELLS",
+  "METALLIC PIPE DRIPS",
+  "MODULAR GLITCH BLIPS",
+  "RESONANT COWBELLS",
+  "8-BIT CHIPTUNE ARPS",
+  "SHIMMERING CRYSTAL PADS",
+  "DEEP ANALOG CHORDS",
+  "WARP-DRIVE FILTER SWEEPS",
+  "ORGANIC GRAVEL CRUNCH",
+  "REVERSED VOCAL TEXTURES",
+  "STACCATO CELLO STABS",
+  "DAMPENED CONGA LOOPS",
+  "ELECTRIC PIANO TREMOLO"
 ];
 
 const TEMPOS = [
   "113 BPM / LAID BACK",
+  "114 BPM / DUSTY SWING",
   "115 BPM / SGIJA SWING",
+  "116 BPM / MELLOW GROOVE",
+  "117 BPM / DEEP SHUFFLE",
   "118 BPM / STEADY DEEP",
+  "119 BPM / HYPNOTIC FLOW",
   "120 BPM / SOULFUL DRIVE",
+  "121 BPM / MODERN HOUSE",
   "122 BPM / AFRO SHUFFLE",
+  "123 BPM / TECHNO-TECH",
   "124 BPM / SURGICAL TECH",
+  "125 BPM / INDUSTRIAL THUMP",
   "126 BPM / GQOM DRIVE",
+  "127 BPM / RAW ENERGY",
   "128 BPM / PEAK ENERGY",
+  "12/8 TRIPLET 113 BPM",
   "12/8 TRIPLET 115 BPM",
-  "12/8 TRIPLET 124 BPM"
+  "12/8 TRIPLET 120 BPM",
+  "12/8 TRIPLET 124 BPM",
+  "12/8 TRIPLET 126 BPM",
+  "SWING-SHIFT 118 BPM",
+  "OFF-BEAT 122 BPM",
+  "LINEAR 128 BPM DRIVE",
+  "DRAGGING 114 BPM SOUL",
+  "RUSHED 127 BPM GQOM",
+  "SHUFFLED 116 BPM AFRO",
+  "GLITCHED 120 BPM SYNC",
+  "STUTTERED 125 BPM PULSE",
+  "STEADY 121 BPM FLOW"
 ];
 
 const GENRE_HINTS: Record<string, { mood: string, instruments: string, tempo: string }> = {
@@ -55,7 +129,11 @@ const GENRE_HINTS: Record<string, { mood: string, instruments: string, tempo: st
   [SAGenre.GQOM]: { mood: "DARK INDUSTRIAL", instruments: "RAW METALLIC TAPS", tempo: "126-128 BPM" },
   [SAGenre.AFRO_TECH]: { mood: "MINIMALIST / TECH", instruments: "NATURE FOLEY / FM", tempo: "122-125 BPM" },
   [SAGenre.SOULFUL_HOUSE]: { mood: "LUSH / GORGEOUS", instruments: "VOCAL CHOPS / KEYS", tempo: "120-122 BPM" },
-  [SAGenre.KWAITO]: { mood: "90S HERITAGE", instruments: "KWAITO KEYS / SNARES", tempo: "113-115 BPM" }
+  [SAGenre.KWAITO]: { mood: "90S HERITAGE", instruments: "KWAITO KEYS / SNARES", tempo: "113-115 BPM" },
+  [SAGenre.SGIJA]: { mood: "RHYTHMIC / DANCE", instruments: "MOOG BASS / SGIJA LEADS", tempo: "113-116 BPM" },
+  [SAGenre.BACARDI]: { mood: "STREET / RAW", instruments: "TAPS / HEAVY KICKS", tempo: "115-120 BPM" },
+  [SAGenre.ANCESTRAL]: { mood: "ANCESTRAL / DEEP", instruments: "TRADITIONAL PERC / VOICES", tempo: "118-124 BPM" },
+  [SAGenre.SA_HOUSE]: { mood: "CLUB / CLASSIC", instruments: "KORG M1 / 909 HATS", tempo: "118-126 BPM" }
 };
 
 const App: React.FC = () => {
@@ -80,9 +158,7 @@ const App: React.FC = () => {
   };
 
   const hints = useMemo(() => {
-    // Spread operator helps maintain type safety for the first element
     const first = [...selectedGenres][0];
-    // Cast 'first' to string to satisfy index type requirements for Record access
     return (first ? GENRE_HINTS[first as string] : null) || GENRE_HINTS[SAGenre.AMAPIANO];
   }, [selectedGenres]);
 
@@ -117,7 +193,6 @@ const App: React.FC = () => {
     if (!mood.trim()) return;
     setIsLoading(true);
     try {
-      // Explicitly type the result of the spread to resolve the unknown[] assignment error
       const genresArray: SAGenre[] = [...selectedGenres];
       const result = await generateMusicPrompt({ genres: genresArray, mood, instruments, tempo });
       const newPrompt: GeneratedPrompt = {
