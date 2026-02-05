@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SONIC ALCHEMIST | TE-CORE ENGINE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --te-bg: #ececec;
+            --te-dark: #1a1a1a;
+            --te-orange: #ff5f00;
+            --te-yellow: #faff00;
+            --te-border: #d1d1d1;
+            --te-panel: #f5f5f5;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--te-bg);
+            color: var(--te-dark);
+            margin: 0;
+            overflow-x: hidden;
+            background-image: radial-gradient(var(--te-border) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .hardware-panel {
+            background: var(--te-panel);
+            border: 2px solid var(--te-dark);
+            box-shadow: 4px 4px 0px var(--te-dark);
+        }
+        .display-screen {
+            background: #000;
+            color: var(--te-orange);
+            font-family: 'JetBrains Mono', monospace;
+            border-radius: 4px;
+            box-shadow: inset 0 0 10px rgba(255, 95, 0, 0.2);
+        }
+        .te-button {
+            background: var(--te-panel);
+            border: 2px solid var(--te-dark);
+            box-shadow: 0 4px 0 var(--te-dark);
+            transition: all 0.1s;
+        }
+        .te-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--te-dark);
+        }
+        .te-button-orange {
+            background: var(--te-orange);
+            color: white;
+        }
+        .segmented-display {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.05em;
+        }
+        .knob-base {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--te-dark);
+            border: 4px solid var(--te-border);
+            position: relative;
+        }
+        .knob-indicator {
+            position: absolute;
+            top: 4px;
+            left: 50%;
+            width: 4px;
+            height: 12px;
+            background: var(--te-orange);
+            transform: translateX(-50%);
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.40.0"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+</body>
+</html>
