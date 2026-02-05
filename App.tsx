@@ -98,6 +98,75 @@ const LOG_MESSAGES = [
   "WRITING SUNO-STYLE PROTOCOLS..."
 ];
 
+const LoadingScreen: React.FC<{ progress: number, logIndex: number, genres: string[] }> = ({ progress, logIndex, genres }) => {
+  return (
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-[#0a0a0a] p-6 overflow-hidden">
+      {/* Scanning Line */}
+      <div className="absolute top-0 left-0 w-full h-[2px] bg-[#ff5f00]/60 shadow-[0_0_15px_#ff5f00] animate-[scanLine_4s_linear_infinite] z-50"></div>
+      
+      {/* Background Data Fragments */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none select-none mono-font text-[8px] leading-tight overflow-hidden break-all text-[#ff5f00]">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div key={i} className="animate-[pulse_2s_infinite]" style={{ animationDelay: `${i * 0.1}s` }}>
+            {Math.random().toString(16).repeat(10)}
+          </div>
+        ))}
+      </div>
+
+      <div className="w-full max-w-lg space-y-6 relative z-10">
+        {/* Radar / Oscillo Visualization */}
+        <div className="flex justify-center mb-4">
+          <div className="relative w-24 h-24">
+            <svg viewBox="0 0 100 100" className="w-full h-full text-[#ff5f00]">
+              <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 2" className="opacity-20" />
+              <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 2" className="opacity-40" />
+              <line x1="50" y1="50" x2="50" y2="2" stroke="currentColor" strokeWidth="1" className="animate-[spin_4s_linear_infinite] origin-center" />
+              <path d="M10 50 Q 25 20, 40 50 T 70 50 T 90 50" fill="none" stroke="currentColor" strokeWidth="1" className="animate-[pulse_0.5s_infinite]" />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+               <div className="w-1 h-1 bg-[#ff5f00] rounded-full animate-ping"></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex justify-between items-end">
+             <div className="mono-font text-2xl font-black italic tracking-tighter text-[#ff5f00] animate-[glitch_2s_infinite]">ALCH_DISTILL_v4.0</div>
+             <div className="mono-font text-[10px] font-bold text-[#ff5f00]/60 tabular-nums">P_SIG: {progress.toFixed(1)}%</div>
+          </div>
+          
+          <div className="h-2 w-full bg-[#ff5f00]/10 overflow-hidden relative border border-[#ff5f00]/30 shadow-[0_0_10px_rgba(255,95,0,0.1)]">
+            <div className="h-full bg-[#ff5f00] transition-all duration-300 relative" style={{ width: `${progress}%` }}>
+              <div className="absolute top-0 right-0 h-full w-4 bg-white/40 blur-[2px] animate-[shimmer_1.5s_infinite]"></div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mt-4">
+             <div className="bg-[#ff5f00]/5 border border-[#ff5f00]/20 p-3">
+                <div className="mono-font text-[9px] font-bold text-[#ff5f00] mb-1 uppercase tracking-tighter">Current Matrix</div>
+                <div className="mono-font text-[11px] text-[#ff5f00] truncate uppercase font-bold">
+                   {genres.join(' + ')}
+                </div>
+             </div>
+             <div className="bg-[#ff5f00]/5 border border-[#ff5f00]/20 p-3">
+                <div className="mono-font text-[9px] font-bold text-[#ff5f00] mb-1 uppercase tracking-tighter">Extraction Log</div>
+                <div className="mono-font text-[11px] text-[#ff5f00] truncate uppercase font-bold animate-pulse">
+                   {LOG_MESSAGES[logIndex]}
+                </div>
+             </div>
+          </div>
+
+          <div className="pt-2">
+             <div className="mono-font text-[9px] text-[#ff5f00]/40 uppercase tracking-[0.2em] leading-relaxed text-center">
+               Isolating Sub-Harmonics // Securing Sync-Lock 128 // Distilling Heritage Nodes
+             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   const [selectedGenres, setSelectedGenres] = useState<Set<SAGenre>>(new Set([SAGenre.AMAPIANO]));
   const [mood, setMood] = useState('');
@@ -181,7 +250,7 @@ const App: React.FC = () => {
         setCurrentPrompt(newPrompt);
         setCopyStatus({});
         setIsLoading(false);
-      }, 600);
+      }, 800);
     } catch (err) {
       setIsLoading(false);
     }
@@ -213,7 +282,7 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      {/* Main Container - Flex-1 with Min-H-0 to allow internal scrolling only */}
+      {/* Main Container */}
       <div className="flex-1 min-h-0 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
         
         {/* Left Control Panel */}
@@ -275,7 +344,7 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Trigger Button - Fixed at bottom of panel */}
+          {/* Trigger Button */}
           <div className="p-4 border-t-2 border-black bg-white">
             <button
               onClick={handleGenerate}
@@ -303,26 +372,11 @@ const App: React.FC = () => {
               <div className="absolute inset-0 pointer-events-none opacity-5 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
 
               {isLoading && (
-                <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/95 p-6">
-                  <div className="w-full max-w-sm space-y-4">
-                    <div className="flex justify-between items-end">
-                       <div className="mono-font text-xl font-black italic tracking-tighter text-[#ff5f00] animate-pulse">ALCHEMY_MODE</div>
-                       <div className="mono-font text-[10px] font-bold text-[#ff5f00]/60">ID:{Math.random().toString(16).slice(2,6).toUpperCase()}</div>
-                    </div>
-                    
-                    <div className="h-1.5 w-full bg-[#ff5f00]/10 overflow-hidden relative border border-[#ff5f00]/30">
-                      <div className="h-full bg-[#ff5f00] transition-all duration-300" style={{ width: `${loadingProgress}%` }}></div>
-                    </div>
-
-                    <div className="space-y-1 mt-2">
-                       <div className="mono-font text-[12px] font-bold text-[#ff5f00] animate-bounce">&gt; {LOG_MESSAGES[logIndex]}</div>
-                       <div className="mono-font text-[9px] text-[#ff5f00]/40 uppercase tracking-widest leading-relaxed">
-                         Distilling node: {[...selectedGenres].slice(0, 2).join(' + ')}...<br/>
-                         Range Secured: 113-128 BPM
-                       </div>
-                    </div>
-                  </div>
-                </div>
+                <LoadingScreen 
+                  progress={loadingProgress} 
+                  logIndex={logIndex} 
+                  genres={[...selectedGenres].map(g => g.toString())} 
+                />
               )}
 
               {currentPrompt ? (
@@ -417,6 +471,17 @@ const App: React.FC = () => {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scanLine {
+          from { top: 0%; }
+          to { top: 100%; }
+        }
+        @keyframes glitch {
+          0% { transform: translate(0); text-shadow: none; }
+          2% { transform: translate(-1px, 1px); text-shadow: 1px 0 #ff5f00; }
+          4% { transform: translate(1px, -1px); text-shadow: -1px 0 #faff00; }
+          6% { transform: translate(0); text-shadow: none; }
+          100% { transform: translate(0); text-shadow: none; }
         }
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
