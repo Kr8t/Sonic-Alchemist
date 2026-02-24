@@ -14,14 +14,29 @@ export enum SAGenre {
   ANCESTRAL = 'Ancestral House',
   KWAITO = 'Kwaito',
   QUANTUM = 'Quantum Sound',
-  TECH_GOM = 'Tech-Gqom'
+  TECH_GOM = 'Tech-Gqom',
+  BOLO_HOUSE = 'Bolo House',
+  AFRO_HOUSE = 'Afro House',
+  TRIBAL_HOUSE = 'Tribal House',
+  JAZZ_AMAPIANO = 'Jazz Amapiano',
+  ROUGH_AMAPIANO = 'Rough Amapiano',
+  DARK_GQOM = 'Dark Gqom',
+  SGQOM = 'SGqom',
+  MOTSWAKO = 'Motswako',
+  ISGUBHU = 'Isgubhu',
+  VOCAL_AMAPIANO = 'Vocal Amapiano'
 }
+
+export type VocalStyle = 'MELODIC' | 'RHYTHMIC CHANT' | 'SPOKEN WORD' | 'AD-LIBS' | 'WHISPERED' | 'GROWLED' | 'AUTOTUNED' | 'HARMONIZED' | 'NONE';
 
 export interface PromptRequest {
   genres: SAGenre[];
   mood: string;
   instruments?: string;
   tempo?: string;
+  includeVocals?: boolean;
+  vocalStyle?: VocalStyle;
+  instrumentBalance?: number; // 0: Traditional, 100: Synth
 }
 
 export interface GeneratedPrompt {

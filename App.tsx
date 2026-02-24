@@ -1,6 +1,8 @@
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { SAGenre, GeneratedPrompt } from './types';
+import { Twitter, Facebook, Download, Share2, Sun, Moon, Save, Trash2, FolderOpen } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { SAGenre, GeneratedPrompt, VocalStyle } from './types';
 import { generateMusicPrompt } from './services/geminiService';
 
 const MOODS = [
@@ -23,7 +25,27 @@ const MOODS = [
   "NEON-LIT TAXI INTERIOR / VAPORWAVE DRIFT",
   "SUBMERGED AQUATIC BASS / FLUID MOTION",
   "CHROME-PLATED AFRO BEAT / FUTURISTIC POLISH",
-  "HAZY LATE NIGHT LOUNGE / SMOKY PIANO"
+  "HAZY LATE NIGHT LOUNGE / SMOKY PIANO",
+  "DRAKENSBERG ECHO CLOUDS / ETHEREAL HEIGHTS",
+  "MAMELODI MIDNIGHT / SHARP SGIJA PULSE",
+  "UMHLANGA SHORELINE / SALTY SYNTH BREEZE",
+  "VAPOR-TRAIL DREAMS / STRATOSPHERIC PADS",
+  "DISTORTED TOWNSHIP GHOSTS / HAUNTED LO-FI",
+  "GOLDEN CITY GLIMMER / SPARKLING PERCUSSION",
+  "DEEP LIMPOPO NIGHTS / HYPNOTIC CICADA BUZZ",
+  "CONCRETE JUNGLE HUM / URBAN BIODIVERSITY",
+  "LIQUID SANDTON SUNSET / AMBER RADIANCE",
+  "ABANDONED MINE ECHO / SUBTERRANEAN BOOM",
+  "HIGH-VELOCITY TAXI RANK / KINETIC FRICTION",
+  "MELANCHOLIC PIANO VOID / EMOTIONAL DEPTH",
+  "TRIBAL FIREPIT / EMBERS AND ANCESTRY",
+  "CYBERNETIC SHEBEEN / NEON-SOAKED KWAITO",
+  "POLISHED MARBLE HALLS / REVERBERANT LUXURY",
+  "DUSTY VINYL CRACKLE / PRETORIA NOSTALGIA",
+  "ELECTRIC STORMBANK / VOLTAGE SPIKES",
+  "MISTY CAPE FLATS / GRITTY TEXTURES",
+  "TRANSCENDENTAL RITUAL / SPIRITUAL FREQUENCY",
+  "FUTURISTIC AFRO-FUSION / CHROME AND CLAY"
 ];
 
 const INSTRUMENTS = [
@@ -46,7 +68,27 @@ const INSTRUMENTS = [
   "PULSATING 303 ACID LINE / SQUELCHY RESONANCE",
   "HOLLOW WOODEN PLUCKS / PERCUSSIVE MELODY",
   "METALLIC PIPE DRIPS / REVERBERANT METAL",
-  "MODULAR GLITCH BLIPS / RANDOMIZED SIGNAL"
+  "MODULAR GLITCH BLIPS / RANDOMIZED SIGNAL",
+  "OVERDRIVEN SGIJA WHISTLE / PIERCING FREQ",
+  "FM ORGAN STABS / M1-STYLE HERITAGE",
+  "SQUARE-WAVE LEAD / RETRO-GAME AFRO",
+  "DAMPENED CONGA LOOPS / EARTHY DRIVE",
+  "BIT-REDUCED RIMSHOTS / CRUNCHY SNAPS",
+  "REVERSED VOCAL GRAINS / GHOSTLY CHOPS",
+  "ANALOG TAPE HISS / SATURATED NOISE",
+  "CRISP COWBELL PING / MINIMALIST ACCENT",
+  "DEEP CELLO PLUCKS / MELANCHOLIC SUB",
+  "OPERATOR FM BELLS / CRYSTALLINE TONES",
+  "909 HI-HAT CHIRPS / TECHNO HERITAGE",
+  "RESAMPLING DELAY TAILS / INFINITE FEEDBACK",
+  "PLASTIC PIPE HITS / UNIQUE TRANSIENTS",
+  "DISTORTED HARMONICA / BLUES-FUSION BASS",
+  "METALLIC BOWLS / RESONANT HARMONICS",
+  "GRANULAR RAIN TEXTURES / AMBIENT NOISE",
+  "CLICK-TRACK PERCUSSION / CLOCKWORK FLOW",
+  "RESONANT FILTER SWEEPS / LIQUID MOTION",
+  "WAH-WAH AFRO GUITAR / FUNK INJECTION",
+  "DIGITAL WHALE HUMS / EXPERIMENTAL DEPTH"
 ];
 
 const TEMPOS = [
@@ -67,21 +109,31 @@ const TEMPOS = [
 ];
 
 const GENRE_HINTS: Record<string, { mood: string, instruments: string, tempo: string }> = {
-  [SAGenre.AMAPIANO]: { mood: "LUSH JAZZ / SUNSET LOUNGE / CHILL", instruments: "LOG DRUMS / RHODES / SHAKERS", tempo: "113-115 BPM" },
-  [SAGenre.PRIVATE_SCHOOL]: { mood: "SOPHISTICATED / JAZZY / LUSH PADS", instruments: "GRAND PIANO / LOG DRUMS / FLUTES", tempo: "113-114 BPM" },
-  [SAGenre.DEEP_HOUSE]: { mood: "HYPNOTIC / SURGICAL / WAREHOUSE", instruments: "SUB BASS / ATMOS PADS / 909 HATS", tempo: "118-122 BPM" },
-  [SAGenre.THREE_STEP]: { mood: "RITUALISTIC / SPIRITUAL / TRIPLET", instruments: "WOOD PERC / CHANTS / FOLEY", tempo: "115-124 BPM (TRIPLET)" },
-  [SAGenre.GQOM]: { mood: "DARK INDUSTRIAL / RAW / AGGRESSIVE", instruments: "METALLIC TAPS / HEAVY SUB / DISTORTION", tempo: "126-128 BPM" },
-  [SAGenre.HARD_GQOM]: { mood: "EXTREME / DISTORTED / PEAK POWER", instruments: "OVERDRIVE SUB / METAL SLAM / VOID", tempo: "127-128 BPM" },
-  [SAGenre.AFRO_TECH]: { mood: "MINIMAL / TECH / ANCESTRAL FUSION", instruments: "STACCATO SYNTHS / FOLEY / FM BASS", tempo: "122-125 BPM" },
-  [SAGenre.SOULFUL_HOUSE]: { mood: "GORGEOUS / VOCAL-DRIVEN / WARM", instruments: "VOCAL CHOPS / BRIGHT KEYS / ORGAN", tempo: "120-122 BPM" },
-  [SAGenre.KWAITO]: { mood: "90S NOSTALGIA / TOWNSHIP GROOVE", instruments: "KWAITO KEYS / SNARES / SUB DRONE", tempo: "113-115 BPM" },
-  [SAGenre.SGIJA]: { mood: "DANCE-FLOOR / HIGH-ENERGY / BOUNCY", instruments: "MOOG LEADS / QUICK LOG DRUMS", tempo: "113-116 BPM" },
-  [SAGenre.BACARDI]: { mood: "STREET FESTIVAL / RAW / FAST", instruments: "BACARDI TAPS / WHISTLES / KICKS", tempo: "115-128 BPM" },
-  [SAGenre.ANCESTRAL]: { mood: "DEEP SPIRITUAL / ANCESTRAL ECHO", instruments: "HAND DRUMS / NATURE SOUNDS / CHANTS", tempo: "118-124 BPM" },
-  [SAGenre.SA_HOUSE]: { mood: "CLASSIC CLUB / HERITAGE DRIVE", instruments: "M1 PIANO / 909 KIT / ORGANIC BASS", tempo: "118-126 BPM" },
-  [SAGenre.QUANTUM]: { mood: "EXPERIMENTAL / GLITCHY / FUTURE", instruments: "STUTTER LOGS / DIGITAL DEBRIS", tempo: "114-118 BPM" },
-  [SAGenre.TECH_GOM]: { mood: "TECHNO-GQOM HYBRID / SURGICAL", instruments: "FM PERC / INDUSTRIAL KICKS", tempo: "125-128 BPM" }
+  [SAGenre.AMAPIANO]: { mood: "LUSH JAZZ / SUNSET LOUNGE / CHILL / SOPHISTICATED NOSTALGIA", instruments: "SUB-LOW LOG DRUMS / RHODES CHORDS / SHAKER LOOPS / FLUTE ACCENTS", tempo: "113-115 BPM / SHUFFLED GROOVE" },
+  [SAGenre.PRIVATE_SCHOOL]: { mood: "SOPHISTICATED / JAZZY / LUSH PADS / HIGH-GLOSS WEALTH", instruments: "GRAND PIANO / LOG DRUMS / FLUTES / VELVET SYNTH TEXTURES", tempo: "113-114 BPM / LAID BACK" },
+  [SAGenre.DEEP_HOUSE]: { mood: "HYPNOTIC / SURGICAL / WAREHOUSE / MINIMAL PRECISION", instruments: "DEEP SUB BASS / ATMOS PADS / 909 HATS / SURGICAL GLASS HITS", tempo: "118-122 BPM / STEADY FLOW" },
+  [SAGenre.THREE_STEP]: { mood: "RITUALISTIC / SPIRITUAL / TRIPLET / ANCESTRAL ECHO", instruments: "WOOD PERCUSSION / SPIRITUAL CHANTS / FOLEY / HEAVY LOG DRUM ACCENTS", tempo: "115-124 BPM / 12/8 TRIPLET SWING" },
+  [SAGenre.GQOM]: { mood: "DARK INDUSTRIAL / RAW / AGGRESSIVE / DURBAN GRIME", instruments: "METALLIC TAPS / HEAVY SUB / DISTORTION / INDUSTRIAL SLAMS", tempo: "126-128 BPM / KINETIC FRICTION" },
+  [SAGenre.HARD_GQOM]: { mood: "EXTREME / DISTORTED / PEAK POWER / VOID RESONANCE", instruments: "OVERDRIVE SUB / METAL SLAM / VOID TEXTURES / AGGRESSIVE TRANSIENTS", tempo: "127-128 BPM / RUSHED ENERGY" },
+  [SAGenre.AFRO_TECH]: { mood: "MINIMAL / TECH / ANCESTRAL FUSION / FUTURISTIC POLISH", instruments: "STACCATO SYNTHS / NATURE FOLEY / FM BASS / RHYTHMIC CALL AND RESPONSE", tempo: "122-125 BPM / TECH SHUFFLE" },
+  [SAGenre.SOULFUL_HOUSE]: { mood: "GORGEOUS / VOCAL-DRIVEN / WARM / AMBER RADIANCE", instruments: "VOCAL CHOPS / BRIGHT KEYS / M1 ORGAN / SOULFUL PADS", tempo: "120-122 BPM / SOULFUL DRIVE" },
+  [SAGenre.KWAITO]: { mood: "90S NOSTALGIA / TOWNSHIP GROOVE / DUSTY VINYL CRACKLE", instruments: "KWAITO KEYS / SLOW SNARES / SUB DRONE / ANALOG TAPE HISS", tempo: "113-115 BPM / DRAGGING GROOVE" },
+  [SAGenre.SGIJA]: { mood: "DANCE-FLOOR / HIGH-ENERGY / BOUNCY / MAMELODI MIDNIGHT", instruments: "MOOG LEADS / QUICK LOG DRUMS / PIERCING WHISTLES / SHARP TRANSIENTS", tempo: "113-116 BPM / HIGH-VELOCITY" },
+  [SAGenre.BACARDI]: { mood: "STREET FESTIVAL / RAW / FAST / AGGRESSIVE FESTIVAL", instruments: "BACARDI TAPS / WHISTLES / HEAVY KICKS / METALLIC SHELF PERCUSSION", tempo: "115-128 BPM / PEAK ENERGY" },
+  [SAGenre.ANCESTRAL]: { mood: "DEEP SPIRITUAL / ANCESTRAL ECHO / TRANSCENDENTAL RITUAL", instruments: "HAND DRUMS / NATURE SOUNDS / CHANTS / ETHEREAL PADS", tempo: "118-124 BPM / RITUAL SWING" },
+  [SAGenre.SA_HOUSE]: { mood: "CLASSIC CLUB / HERITAGE DRIVE / JOZI MORNING", instruments: "M1 PIANO / 909 KIT / ORGANIC BASS / HERITAGE ORGAN STABS", tempo: "118-126 BPM / STEADY DRIVE" },
+  [SAGenre.QUANTUM]: { mood: "EXPERIMENTAL / GLITCHY / FUTURE / DIGITAL DEBRIS", instruments: "STUTTER LOGS / DIGITAL DEBRIS / GRANULAR TEXTURES / RANDOMIZED SIGNAL", tempo: "114-118 BPM / GLITCHY FLOW" },
+  [SAGenre.TECH_GOM]: { mood: "TECHNO-GQOM HYBRID / SURGICAL / INDUSTRIAL THUMP", instruments: "FM PERCUSSION / INDUSTRIAL KICKS / METALLIC DRIPS / TECH STABS", tempo: "125-128 BPM / STEELY DRIVE" },
+  [SAGenre.BOLO_HOUSE]: { mood: "LIMPOPO ENERGY / FAST / UPBEAT / HIGH-VELOCITY", instruments: "BOLO SYNTHS / FAST KICKS / WHISTLES / AGGRESSIVE FESTIVAL ENERGY", tempo: "128-135 BPM / HYPER-SPEED" },
+  [SAGenre.AFRO_HOUSE]: { mood: "DEEP TRIBAL / ORGANIC / DRIVING / HYPNOTIC", instruments: "CONGAS / SHAKERS / DEEP SUB BASS / TRIBAL FIREPIT AMBIENCE", tempo: "120-124 BPM / HYPNOTIC DRIVE" },
+  [SAGenre.TRIBAL_HOUSE]: { mood: "RHYTHMIC / EARTHY / CEREMONIAL / RITUALISTIC", instruments: "TRIBAL DRUMS / CHANTS / WOOD PERCUSSION / CEREMONIAL BELLS", tempo: "122-126 BPM / RHYTHMIC RITUAL" },
+  [SAGenre.JAZZ_AMAPIANO]: { mood: "SOPHISTICATED / SMOOTH / JAZZY / LOUNGE VIBE", instruments: "SAXOPHONE / LOG DRUMS / RHODES / JAZZ PIANO / VELVET TEXTURES", tempo: "112-114 BPM / SMOOTH SWING" },
+  [SAGenre.ROUGH_AMAPIANO]: { mood: "GRITTY / STREET / AGGRESSIVE / RAW ENERGY", instruments: "DISTORTED LOG DRUMS / RAW PERCUSSION / STREET FOLEY / AGGRESSIVE WHISTLES", tempo: "113-115 BPM / RAW STREET GROOVE" },
+  [SAGenre.DARK_GQOM]: { mood: "OMINOUS / MINIMAL / HAUNTING / DURBAN HARBOR AMBIENCE", instruments: "DARK SUBS / METALLIC CLANGS / GHOST KICKS / HAUNTED LO-FI TEXTURES", tempo: "126-128 BPM / OMINOUS DRIVE" },
+  [SAGenre.SGQOM]: { mood: "SOULFUL GQOM / MELODIC / DEEP / EMOTIONAL DEPTH", instruments: "SOFT PADS / GQOM KICKS / VOCAL CHOPS / MELODIC SUB BASS", tempo: "125-127 BPM / MELODIC DRIVE" },
+  [SAGenre.MOTSWAKO]: { mood: "HIP-HOP FUSION / RHYTHMIC / BOLD / URBAN VIBE", instruments: "BOOM BAP KICKS / SA SYNTHS / SCRATCH ARTIFACTS / URBAN FOLEY", tempo: "90-110 BPM / BOLD RHYTHM" },
+  [SAGenre.ISGUBHU]: { mood: "TRADITIONAL HOUSE / DRUM-HEAVY / HERITAGE DRIVE", instruments: "HEAVY KICKS / REPETITIVE PERCUSSION / SIMPLE SYNTH LINES / HERITAGE ORGAN", tempo: "124-128 BPM / HEAVY DRIVE" },
+  [SAGenre.VOCAL_AMAPIANO]: { mood: "MELODIC / EMOTIONAL / CATCHY / VOCAL-DRIVEN", instruments: "LEAD VOCALS / LOG DRUMS / BRIGHT KEYS / CATCHY SYNTH HOOKS", tempo: "113-115 BPM / CATCHY GROOVE" }
 };
 
 const LOG_MESSAGES = [
@@ -98,14 +150,20 @@ const LOG_MESSAGES = [
   "WRITING SUNO-STYLE PROTOCOLS..."
 ];
 
+interface InstrumentPreset {
+  id: string;
+  name: string;
+  value: string;
+}
+
 const LoadingScreen: React.FC<{ progress: number, logIndex: number, genres: string[] }> = ({ progress, logIndex, genres }) => {
   return (
-    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-[#0a0a0a] p-6 overflow-hidden">
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-[var(--screen-bg)] p-6 overflow-hidden">
       {/* Scanning Line */}
-      <div className="absolute top-0 left-0 w-full h-[2px] bg-[#ff5f00]/60 shadow-[0_0_15px_#ff5f00] animate-[scanLine_4s_linear_infinite] z-50"></div>
+      <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--accent)]/60 shadow-[0_0_15px_var(--accent)] animate-[scanLine_4s_linear_infinite] z-50"></div>
       
       {/* Background Data Fragments */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none select-none mono-font text-[8px] leading-tight overflow-hidden break-all text-[#ff5f00]">
+      <div className="absolute inset-0 opacity-10 pointer-events-none select-none mono-font text-[8px] leading-tight overflow-hidden break-all text-[var(--accent)]">
         {Array.from({ length: 20 }).map((_, i) => (
           <div key={i} className="animate-[pulse_2s_infinite]" style={{ animationDelay: `${i * 0.1}s` }}>
             {Math.random().toString(16).repeat(10)}
@@ -117,47 +175,47 @@ const LoadingScreen: React.FC<{ progress: number, logIndex: number, genres: stri
         {/* Radar / Oscillo Visualization */}
         <div className="flex justify-center mb-4">
           <div className="relative w-24 h-24">
-            <svg viewBox="0 0 100 100" className="w-full h-full text-[#ff5f00]">
+            <svg viewBox="0 0 100 100" className="w-full h-full text-[var(--accent)]">
               <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 2" className="opacity-20" />
               <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 2" className="opacity-40" />
               <line x1="50" y1="50" x2="50" y2="2" stroke="currentColor" strokeWidth="1" className="animate-[spin_4s_linear_infinite] origin-center" />
               <path d="M10 50 Q 25 20, 40 50 T 70 50 T 90 50" fill="none" stroke="currentColor" strokeWidth="1" className="animate-[pulse_0.5s_infinite]" />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-               <div className="w-1 h-1 bg-[#ff5f00] rounded-full animate-ping"></div>
+               <div className="w-1 h-1 bg-[var(--accent)] rounded-full animate-ping"></div>
             </div>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="flex justify-between items-end">
-             <div className="mono-font text-2xl font-black italic tracking-tighter text-[#ff5f00] animate-[glitch_2s_infinite]">ALCH_DISTILL_v4.0</div>
-             <div className="mono-font text-[10px] font-bold text-[#ff5f00]/60 tabular-nums">P_SIG: {progress.toFixed(1)}%</div>
+             <div className="mono-font text-2xl font-black italic tracking-tighter text-[var(--accent)] animate-[glitch_2s_infinite]">ALCH_DISTILL_v4.0</div>
+             <div className="mono-font text-[10px] font-bold text-[var(--accent)]/60 tabular-nums">P_SIG: {progress.toFixed(1)}%</div>
           </div>
           
-          <div className="h-2 w-full bg-[#ff5f00]/10 overflow-hidden relative border border-[#ff5f00]/30 shadow-[0_0_10px_rgba(255,95,0,0.1)]">
-            <div className="h-full bg-[#ff5f00] transition-all duration-300 relative" style={{ width: `${progress}%` }}>
+          <div className="h-2 w-full bg-[var(--accent)]/10 overflow-hidden relative border border-[var(--accent)]/30 shadow-[0_0_10px_rgba(var(--accent-rgb),0.1)]">
+            <div className="h-full bg-[var(--accent)] transition-all duration-300 relative" style={{ width: `${progress}%` }}>
               <div className="absolute top-0 right-0 h-full w-4 bg-white/40 blur-[2px] animate-[shimmer_1.5s_infinite]"></div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-4">
-             <div className="bg-[#ff5f00]/5 border border-[#ff5f00]/20 p-3">
-                <div className="mono-font text-[9px] font-bold text-[#ff5f00] mb-1 uppercase tracking-tighter">Current Matrix</div>
-                <div className="mono-font text-[11px] text-[#ff5f00] truncate uppercase font-bold">
+             <div className="bg-[var(--accent)]/5 border border-[var(--accent)]/20 p-3">
+                <div className="mono-font text-[9px] font-bold text-[var(--accent)] mb-1 uppercase tracking-tighter">Current Matrix</div>
+                <div className="mono-font text-[11px] text-[var(--accent)] truncate uppercase font-bold">
                    {genres.join(' + ')}
                 </div>
              </div>
-             <div className="bg-[#ff5f00]/5 border border-[#ff5f00]/20 p-3">
-                <div className="mono-font text-[9px] font-bold text-[#ff5f00] mb-1 uppercase tracking-tighter">Extraction Log</div>
-                <div className="mono-font text-[11px] text-[#ff5f00] truncate uppercase font-bold animate-pulse">
+             <div className="bg-[var(--accent)]/5 border border-[var(--accent)]/20 p-3">
+                <div className="mono-font text-[9px] font-bold text-[var(--accent)] mb-1 uppercase tracking-tighter">Extraction Log</div>
+                <div className="mono-font text-[11px] text-[var(--accent)] truncate uppercase font-bold animate-pulse">
                    {LOG_MESSAGES[logIndex]}
                 </div>
              </div>
           </div>
 
           <div className="pt-2">
-             <div className="mono-font text-[9px] text-[#ff5f00]/40 uppercase tracking-[0.2em] leading-relaxed text-center">
+             <div className="mono-font text-[9px] text-[var(--accent)]/40 uppercase tracking-[0.2em] leading-relaxed text-center">
                Isolating Sub-Harmonics // Securing Sync-Lock 128 // Distilling Heritage Nodes
              </div>
           </div>
@@ -168,6 +226,7 @@ const LoadingScreen: React.FC<{ progress: number, logIndex: number, genres: stri
 };
 
 const App: React.FC = () => {
+  const [theme, setTheme] = useState<'te-core' | 'cyberpunk'>('te-core');
   const [selectedGenres, setSelectedGenres] = useState<Set<SAGenre>>(new Set([SAGenre.AMAPIANO]));
   const [mood, setMood] = useState('');
   const [instruments, setInstruments] = useState('');
@@ -178,8 +237,26 @@ const App: React.FC = () => {
   const [currentPrompt, setCurrentPrompt] = useState<GeneratedPrompt | null>(null);
   const [editedStyle, setEditedStyle] = useState('');
   const [copyStatus, setCopyStatus] = useState<Record<string, string>>({});
+  const [includeVocals, setIncludeVocals] = useState(false);
+  const [vocalStyle, setVocalStyle] = useState<VocalStyle>('NONE');
+  const [instrumentBalance, setInstrumentBalance] = useState(50);
+  const [useInstrumentBalance, setUseInstrumentBalance] = useState(false);
+  const [presets, setPresets] = useState<InstrumentPreset[]>(() => {
+    const saved = localStorage.getItem('sa_instrument_presets');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [isSavingPreset, setIsSavingPreset] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
   
   const displayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'te-core' ? 'cyberpunk' : 'te-core');
+  };
 
   const toggleGenre = (g: SAGenre) => {
     const next = new Set(selectedGenres);
@@ -229,6 +306,11 @@ const App: React.FC = () => {
     handleRandomizeField(setMood, MOODS);
     handleRandomizeField(setInstruments, INSTRUMENTS);
     handleRandomizeField(setTempo, TEMPOS);
+    setIncludeVocals(Math.random() > 0.5);
+    const styles: VocalStyle[] = ['MELODIC', 'RHYTHMIC CHANT', 'SPOKEN WORD', 'AD-LIBS', 'WHISPERED', 'GROWLED', 'AUTOTUNED', 'HARMONIZED', 'NONE'];
+    setVocalStyle(styles[Math.floor(Math.random() * styles.length)]);
+    setUseInstrumentBalance(Math.random() > 0.5);
+    setInstrumentBalance(Math.floor(Math.random() * 101));
   };
 
   const handleGenerate = async () => {
@@ -237,7 +319,15 @@ const App: React.FC = () => {
     setCurrentPrompt(null);
     try {
       const genresArray: SAGenre[] = [...selectedGenres];
-      const result = await generateMusicPrompt({ genres: genresArray, mood, instruments, tempo });
+      const result = await generateMusicPrompt({ 
+        genres: genresArray, 
+        mood, 
+        instruments, 
+        tempo,
+        includeVocals,
+        vocalStyle,
+        instrumentBalance: useInstrumentBalance ? instrumentBalance : undefined
+      });
       const newPrompt: GeneratedPrompt = {
         id: Math.random().toString(36).substr(2, 9).toUpperCase(),
         style: result.style,
@@ -262,21 +352,125 @@ const App: React.FC = () => {
     setTimeout(() => setCopyStatus(prev => ({ ...prev, [key]: '' })), 2000);
   }, []);
 
+  const shareToTwitter = (text: string) => {
+    // Twitter limit is 280. We leave some space for the intro and hashtags.
+    const intro = "Check out this Suno prompt from Sonic Alchemist: ";
+    const hashtags = " #SunoAI #SonicAlchemist";
+    const maxLength = 280 - intro.length - hashtags.length - 5;
+    
+    const truncatedText = text.length > maxLength 
+      ? text.substring(0, maxLength) + "..." 
+      : text;
+      
+    const fullTweet = `${intro}"${truncatedText}"${hashtags}`;
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(fullTweet)}`;
+    window.open(url, '_blank');
+  };
+
+  const shareToFacebook = (text: string) => {
+    const appUrl = window.location.href;
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl)}&quote=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
+  const downloadShareCard = async () => {
+    if (!displayRef.current) return;
+    
+    try {
+      // Temporarily modify styles for full text capture
+      const display = displayRef.current;
+      const buttons = display.querySelector('.share-buttons-container') as HTMLElement;
+      const textareas = display.querySelectorAll('textarea');
+      const pres = display.querySelectorAll('pre');
+      
+      if (buttons) buttons.style.display = 'none';
+      
+      // Save original styles
+      const originalStyles = new Map<Element, string>();
+      textareas.forEach(el => {
+        originalStyles.set(el, el.style.height);
+        el.style.height = 'auto';
+        el.style.overflow = 'visible';
+      });
+      pres.forEach(el => {
+        originalStyles.set(el, el.style.maxHeight || '');
+        el.style.maxHeight = 'none';
+        el.style.overflow = 'visible';
+      });
+
+      const canvas = await html2canvas(display, {
+        backgroundColor: theme === 'te-core' ? '#0a0a0a' : '#000000',
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        onclone: (clonedDoc) => {
+          // Ensure the cloned display has full height
+          const clonedDisplay = clonedDoc.querySelector('.display-screen') as HTMLElement;
+          if (clonedDisplay) {
+            clonedDisplay.style.height = 'auto';
+            clonedDisplay.style.maxHeight = 'none';
+            clonedDisplay.style.overflow = 'visible';
+          }
+        }
+      });
+      
+      // Restore original styles
+      if (buttons) buttons.style.display = 'flex';
+      textareas.forEach(el => el.style.height = originalStyles.get(el) || '');
+      pres.forEach(el => el.style.maxHeight = originalStyles.get(el) || '');
+      
+      const image = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `sonic-alchemist-prompt-${currentPrompt?.id || 'export'}.png`;
+      link.click();
+    } catch (err) {
+      console.error('Failed to generate share card:', err);
+    }
+  };
+
+  const handleSavePreset = () => {
+    if (!instruments.trim() || !newPresetName.trim()) return;
+    const newPreset = { id: Date.now().toString(), name: newPresetName.toUpperCase(), value: instruments };
+    const updated = [...presets, newPreset];
+    setPresets(updated);
+    localStorage.setItem('sa_instrument_presets', JSON.stringify(updated));
+    setNewPresetName('');
+    setIsSavingPreset(false);
+  };
+
+  const deletePreset = (id: string) => {
+    const updated = presets.filter(p => p.id !== id);
+    setPresets(updated);
+    localStorage.setItem('sa_instrument_presets', JSON.stringify(updated));
+  };
+
+  const loadPreset = (val: string) => {
+    setInstruments(val);
+  };
+
   return (
-    <div className="h-screen w-screen p-3 md:p-6 flex flex-col overflow-hidden bg-[#ececec]">
+    <div className="h-screen w-screen p-3 md:p-6 flex flex-col overflow-hidden bg-[var(--bg)]">
       {/* Top Navigation - Compact */}
       <nav className="w-full max-w-7xl mx-auto flex justify-between items-center mb-4 flex-shrink-0">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 hardware-panel flex items-center justify-center bg-[#ff5f00] text-white font-black text-xl rotate-[-2deg]">SA</div>
+          <div className="w-10 h-10 hardware-panel flex items-center justify-center bg-[var(--accent)] text-[var(--bg)] font-black text-xl rotate-[-2deg]">SA</div>
           <div>
-            <h1 className="mono-font font-bold text-lg tracking-tighter uppercase leading-none">Sonic Alchemist</h1>
-            <p className="mono-font text-[9px] opacity-50 uppercase tracking-[0.2em]">Distillation Unit V2.4</p>
+            <h1 className="mono-font font-bold text-lg tracking-tighter uppercase leading-none text-[var(--dark)]">Sonic Alchemist</h1>
+            <p className="mono-font text-[14px] opacity-50 uppercase tracking-[0.2em] text-[var(--dark)]">Distillation Unit V2.4</p>
           </div>
         </div>
         <div className="flex gap-4 items-center">
+          <button 
+            onClick={toggleTheme}
+            className="hardware-panel p-2 flex items-center justify-center hover:bg-[var(--accent)] hover:text-[var(--bg)] transition-colors"
+            title="Toggle Theme"
+          >
+            {theme === 'te-core' ? <Moon size={16} /> : <Sun size={16} />}
+          </button>
           <div className="hidden sm:flex flex-col items-end">
-             <span className="mono-font text-[8px] opacity-40 uppercase">Frequency Range</span>
-             <span className="mono-font text-[10px] font-bold">113 - 128 BPM</span>
+             <span className="mono-font text-[12px] opacity-40 uppercase text-[var(--dark)]">Frequency Range</span>
+             <span className="mono-font text-[14px] font-bold text-[var(--dark)]">113 - 128 BPM</span>
           </div>
           <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
         </div>
@@ -290,82 +484,287 @@ const App: React.FC = () => {
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
             {/* Genre Nodes */}
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="mono-font text-[12px] font-bold uppercase tracking-widest bg-black text-white px-2 py-0.5">01 NODES</span>
-                <span className="mono-font text-[10px] opacity-40 uppercase">{selectedGenres.size} ACTIVE</span>
+              <div className="flex justify-between items-center border-b border-[var(--dark)]/10 pb-1">
+                <span className="mono-font text-[12px] font-bold uppercase tracking-widest bg-[var(--dark)] text-[var(--bg)] px-2 py-0.5">01 NODES</span>
+                <span className="mono-font text-[12px] opacity-40 uppercase text-[var(--dark)]">{selectedGenres.size} ACTIVE</span>
               </div>
-              <div className="grid grid-cols-3 gap-1">
-                {Object.values(SAGenre).map((g) => (
-                  <button
-                    key={g}
-                    onClick={() => toggleGenre(g)}
-                    className={`h-9 border border-black mono-font text-[9px] font-bold transition-all flex items-center justify-center px-1 text-center leading-tight hover:bg-gray-50 ${
-                      selectedGenres.has(g) ? 'bg-black text-[#faff00] shadow-[inset_0_0_4px_rgba(250,255,0,0.5)]' : 'bg-white'
-                    }`}
-                  >
-                    {g.toUpperCase()}
-                  </button>
-                ))}
-              </div>
+          <div className="grid grid-cols-3 gap-1">
+            {Object.values(SAGenre).map((g) => (
+              <button
+                key={g}
+                onClick={() => toggleGenre(g)}
+                className={`h-11 border border-[var(--dark)] mono-font text-[13px] font-bold transition-all flex items-center justify-center px-1 text-center leading-tight hover:bg-[var(--accent)]/10 ${
+                  selectedGenres.has(g) ? 'bg-[var(--accent)] text-[var(--bg)] shadow-[inset_0_0_4px_rgba(0,0,0,0.2)]' : 'bg-[var(--panel)] text-[var(--dark)]'
+                }`}
+              >
+                {g.toUpperCase()}
+              </button>
+            ))}
+          </div>
             </div>
 
             {/* Parameters */}
             <div className="space-y-6">
-              <div className="flex justify-between items-center border-b border-black/10 pb-1">
-                <span className="mono-font text-[12px] font-bold uppercase tracking-widest bg-black text-white px-2 py-0.5">02 BLUEPRINT</span>
-                <button onClick={handleRandomizeAll} className="mono-font text-[10px] font-bold uppercase text-[#ff5f00] hover:underline flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff5f00]"></span> RANDOM ALL
-                </button>
+              <div className="flex justify-between items-center border-b border-[var(--dark)]/10 pb-1">
+                <span className="mono-font text-[12px] font-bold uppercase tracking-widest bg-[var(--dark)] text-[var(--bg)] px-2 py-0.5">02 BLUEPRINT</span>
+                <div className="flex gap-3">
+                  <button onClick={() => { setMood(''); setInstruments(''); setTempo(''); }} className="mono-font text-[13px] font-bold uppercase text-[var(--dark)]/40 hover:text-[var(--dark)] hover:underline">
+                    CLEAR
+                  </button>
+                  <button onClick={() => handleRandomizeField(setMood, MOODS)} className="mono-font text-[13px] font-bold uppercase text-[var(--accent)] hover:underline">
+                    RANDOM MOOD
+                  </button>
+                  <button onClick={() => handleRandomizeField(setInstruments, INSTRUMENTS)} className="mono-font text-[13px] font-bold uppercase text-[var(--accent)] hover:underline">
+                    RANDOM TECH
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const styles: VocalStyle[] = ['MELODIC', 'RHYTHMIC CHANT', 'SPOKEN WORD', 'AD-LIBS', 'WHISPERED', 'GROWLED', 'AUTOTUNED', 'HARMONIZED', 'NONE'];
+                      const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+                      setVocalStyle(randomStyle);
+                      if (randomStyle !== 'NONE') setIncludeVocals(true);
+                    }} 
+                    className="mono-font text-[13px] font-bold uppercase text-[var(--accent)] hover:underline"
+                  >
+                    RANDOM VOCAL
+                  </button>
+                  <button onClick={handleRandomizeAll} className="mono-font text-[13px] font-bold uppercase text-[var(--accent)] hover:underline flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[var(--accent)]"></span> RANDOM ALL
+                  </button>
+                </div>
               </div>
               
               {[
                 { label: 'ATMOS', value: mood, setter: setMood, hint: hints.mood, pool: MOODS },
-                { label: 'TECH', value: instruments, setter: setInstruments, hint: hints.instruments, pool: INSTRUMENTS },
+                { 
+                  label: 'TECH', 
+                  value: instruments, 
+                  setter: setInstruments, 
+                  hint: hints.instruments, 
+                  pool: INSTRUMENTS,
+                  extra: (
+                    <div className="mt-2 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => setIsSavingPreset(!isSavingPreset)}
+                            className="mono-font text-[9px] font-bold uppercase flex items-center gap-1 text-[var(--accent)] hover:underline"
+                          >
+                            <Save size={10} /> {isSavingPreset ? 'CANCEL' : 'SAVE PRESET'}
+                          </button>
+                        </div>
+                        {presets.length > 0 && (
+                          <div className="flex items-center gap-1 opacity-40">
+                            <FolderOpen size={10} />
+                            <span className="mono-font text-[9px] uppercase font-bold">{presets.length} SAVED</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {isSavingPreset && (
+                        <div className="flex gap-1 animate-[fadeIn_0.2s_ease-out]">
+                          <input 
+                            value={newPresetName}
+                            onChange={(e) => setNewPresetName(e.target.value.toUpperCase())}
+                            placeholder="PRESET NAME..."
+                            className="flex-1 bg-[var(--bg)] border border-[var(--dark)] p-1.5 mono-font text-[10px] uppercase outline-none"
+                            autoFocus
+                          />
+                          <button 
+                            onClick={handleSavePreset}
+                            className="bg-[var(--accent)] text-[var(--bg)] px-3 mono-font text-[10px] font-bold uppercase"
+                          >
+                            CONFIRM
+                          </button>
+                        </div>
+                      )}
+
+                      {presets.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {presets.map(p => (
+                            <div key={p.id} className="group flex items-center bg-[var(--dark)]/5 border border-[var(--dark)]/10 px-1.5 py-0.5">
+                              <button 
+                                onClick={() => loadPreset(p.value)}
+                                className="mono-font text-[9px] font-bold uppercase text-[var(--dark)] hover:text-[var(--accent)] transition-colors"
+                              >
+                                {p.name}
+                              </button>
+                              <button 
+                                onClick={() => deletePreset(p.id)}
+                                className="ml-1 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 transition-all"
+                              >
+                                <Trash2 size={8} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                },
                 { label: 'SYNC (113-128)', value: tempo, setter: setTempo, hint: hints.tempo, pool: TEMPOS }
               ].map((field) => (
                 <div key={field.label} className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="mono-font text-[12px] font-bold opacity-60 uppercase">{field.label}</label>
-                    <button onClick={() => handleRandomizeField(field.setter, field.pool)} className="mono-font text-[9px] opacity-40 hover:opacity-100 hover:text-[#ff5f00]">RE-ROLL</button>
+                    <label className="mono-font text-[12px] font-bold opacity-60 uppercase text-[var(--dark)]">{field.label}</label>
+                    <button onClick={() => handleRandomizeField(field.setter, field.pool)} className="mono-font text-[9px] opacity-40 hover:opacity-100 hover:text-[var(--accent)] text-[var(--dark)]">RE-ROLL</button>
                   </div>
                   <div className="relative">
                     <input 
                       value={field.value}
                       onChange={(e) => field.setter(e.target.value.toUpperCase())}
                       placeholder={`E.G. ${field.hint}`}
-                      className="w-full bg-[#e8e8e8] border border-black p-3 mono-font text-[14px] uppercase focus:bg-white transition-all placeholder:text-black/10 outline-none"
+                      className="w-full bg-[var(--bg)] border border-[var(--dark)] p-3 mono-font text-[16px] uppercase focus:bg-[var(--panel)] transition-all placeholder:text-[var(--dark)]/10 outline-none text-[var(--dark)]"
                     />
                     <div className="mt-1">
-                      <p className="mono-font text-[9px] opacity-40 uppercase tracking-tight truncate">GUIDE: {field.hint}</p>
+                      <p className="mono-font text-[12px] opacity-60 uppercase tracking-tight truncate text-[var(--dark)]">GUIDE: {field.hint}</p>
                     </div>
                   </div>
+                  {(field as any).extra}
                 </div>
               ))}
+
+              {/* Advanced Signal Modifiers */}
+              <div className="pt-4 space-y-6 border-t border-[var(--dark)]/10">
+                <div className="flex justify-between items-center">
+                  <span className="mono-font text-[12px] font-bold uppercase tracking-widest bg-[var(--dark)] text-[var(--bg)] px-2 py-0.5">03 SIGNAL MODS</span>
+                </div>
+
+                {/* Vocal Toggle */}
+                <div className="flex items-center justify-between hardware-panel p-4 bg-[var(--panel)] relative overflow-hidden border-l-[12px] border-l-[var(--dark)]">
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col">
+                      <span className="mono-font text-[16px] font-black text-[var(--dark)] uppercase tracking-tighter">Vocal Injection</span>
+                      <span className="mono-font text-[11px] opacity-50 uppercase font-bold">Street phrases / Call-to-action</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIncludeVocals(!includeVocals)}
+                    className={`w-16 h-8 rounded-full transition-all relative border-2 border-[var(--dark)] ${includeVocals ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'}`}
+                  >
+                    <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all shadow-[1px_1px_0px_rgba(0,0,0,0.2)] ${includeVocals ? 'left-9' : 'left-1'}`}></div>
+                  </button>
+                </div>
+
+                {/* Vocal Style Selection */}
+                <div className="space-y-3 hardware-panel p-3 bg-[var(--panel)]">
+                  <div className="flex justify-between items-center">
+                    <div className="flex flex-col">
+                      <span className="mono-font text-[14px] font-bold text-[var(--dark)] uppercase">Vocal Style</span>
+                      <span className="mono-font text-[11px] opacity-50 uppercase">Specify the treatment</span>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        const styles: VocalStyle[] = ['MELODIC', 'RHYTHMIC CHANT', 'SPOKEN WORD', 'AD-LIBS', 'WHISPERED', 'GROWLED', 'AUTOTUNED', 'HARMONIZED', 'NONE'];
+                        const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+                        setVocalStyle(randomStyle);
+                        if (randomStyle !== 'NONE') setIncludeVocals(true);
+                      }} 
+                      className="mono-font text-[12px] opacity-60 hover:opacity-100 hover:text-[var(--accent)] text-[var(--dark)] font-bold"
+                    >
+                      RE-ROLL
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {(['MELODIC', 'RHYTHMIC CHANT', 'SPOKEN WORD', 'AD-LIBS', 'WHISPERED', 'GROWLED', 'AUTOTUNED', 'HARMONIZED', 'NONE'] as VocalStyle[]).map((style) => (
+                      <button
+                        key={style}
+                        onClick={() => {
+                          setVocalStyle(style);
+                          if (style !== 'NONE') setIncludeVocals(true);
+                        }}
+                        className={`mono-font text-[11px] font-bold py-2.5 border transition-all ${
+                          vocalStyle === style 
+                            ? 'bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)]' 
+                            : 'bg-transparent text-[var(--dark)] border-[var(--dark)]/20 hover:border-[var(--dark)]/40'
+                        }`}
+                      >
+                        {style}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Instrument Balance */}
+                <div className="space-y-3 hardware-panel p-3 bg-[var(--panel)]">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="mono-font text-[14px] font-bold text-[var(--dark)] uppercase">Instrument Balance</span>
+                      <span className="mono-font text-[11px] opacity-50 uppercase">Traditional vs Synthetic</span>
+                    </div>
+                    <button 
+                      onClick={() => setUseInstrumentBalance(!useInstrumentBalance)}
+                      className={`mono-font text-[12px] font-bold px-3 py-1.5 border border-[var(--dark)] transition-all ${useInstrumentBalance ? 'bg-[var(--accent)] text-[var(--bg)]' : 'bg-transparent text-[var(--dark)] opacity-60'}`}
+                    >
+                      {useInstrumentBalance ? 'ACTIVE' : 'BYPASS'}
+                    </button>
+                  </div>
+                  
+                  {useInstrumentBalance && (
+                    <div className="space-y-4 animate-[fadeIn_0.2s_ease-out] pt-2">
+                      <div className="flex justify-between mono-font text-[14px] font-bold text-[var(--dark)] opacity-60">
+                        <span>TRADITIONAL</span>
+                        <span>SYNTHETIC</span>
+                      </div>
+                      <div className="relative pt-1 pb-6">
+                        <input 
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="5"
+                          value={instrumentBalance}
+                          onChange={(e) => setInstrumentBalance(parseInt(e.target.value))}
+                          className="w-full accent-[var(--accent)] h-2 bg-[var(--border)] rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div className="absolute top-6 left-0 right-0 flex justify-between px-0.5">
+                          {[0, 25, 50, 75, 100].map((tick) => (
+                            <div key={tick} className="flex flex-col items-center">
+                              <div className="w-0.5 h-1.5 bg-[var(--dark)] opacity-30"></div>
+                              <span className="mono-font text-[10px] opacity-40 mt-1">{tick}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex justify-center pt-2">
+                        <div className="bg-[var(--dark)] text-[var(--bg)] px-4 py-2 rounded-sm shadow-lg transform rotate-[-1deg]">
+                          <span className="mono-font text-[14px] font-black tracking-tighter">
+                            {100 - instrumentBalance}% TRAD / {instrumentBalance}% SYNTH
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Trigger Button */}
-          <div className="p-4 border-t-2 border-black bg-white">
+          <div className="p-4 border-t-2 border-[var(--dark)] bg-[var(--panel)]">
             <button
               onClick={handleGenerate}
               disabled={isLoading || !mood}
-              className={`w-full py-4 te-button text-base font-black mono-font tracking-[0.2em] uppercase transition-all flex flex-col items-center justify-center gap-0.5 ${
-                isLoading || !mood ? 'opacity-50 cursor-not-allowed bg-gray-300 shadow-none' : 'te-button-orange active:translate-y-1'
+              className={`w-full py-6 te-button text-xl font-black mono-font tracking-[0.3em] uppercase transition-all flex flex-col items-center justify-center gap-0.5 border-4 ${
+                isLoading || !mood 
+                  ? 'opacity-50 cursor-not-allowed bg-[var(--border)] shadow-none border-[var(--dark)]/20' 
+                  : 'bg-[var(--accent)] text-[var(--bg)] border-[var(--dark)] shadow-[0_8px_0_var(--dark)] active:shadow-[0_2px_0_var(--dark)] active:translate-y-[6px]'
               }`}
             >
               {isLoading ? (
                  <>
-                   <span className="animate-pulse text-sm">ALCHEMIZING...</span>
-                   <span className="text-[9px] font-normal tracking-widest opacity-80">{Math.round(loadingProgress)}% COMPLETION</span>
+                   <span className="animate-pulse text-2xl">ALCHEMIZING...</span>
                  </>
               ) : 'TRIGGER FUSION'}
             </button>
+            <div className="mt-4 flex justify-center">
+              <span className="text-[14px] font-black tracking-[0.3em] opacity-80 mono-font uppercase text-[var(--dark)]">{Math.round(loadingProgress)}% COMPLETION</span>
+            </div>
           </div>
         </div>
 
         {/* Right Display Panel */}
         <div className="lg:col-span-7 flex flex-col min-h-0 space-y-4">
-          <div className="hardware-panel p-1.5 flex-1 flex flex-col bg-[#0a0a0a] border-[3px] overflow-hidden">
+          <div className="hardware-panel p-1.5 flex-1 flex flex-col bg-[var(--screen-bg)] border-[3px] overflow-hidden">
             <div ref={displayRef} className="display-screen flex-1 p-5 relative flex flex-col overflow-hidden">
               {/* CRT Overlays */}
               <div className="absolute inset-0 pointer-events-none opacity-20 mix-blend-screen" style={{ backgroundImage: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))', backgroundSize: '100% 3px, 4px 100%' }}></div>
@@ -381,54 +780,76 @@ const App: React.FC = () => {
 
               {currentPrompt ? (
                 <div className="flex-1 flex flex-col space-y-6 overflow-hidden animate-[fadeIn_0.5s_ease-out]">
-                  <div className="flex justify-between items-center border-b border-[#ff5f00]/40 pb-2">
+                  <div className="flex justify-between items-start border-b border-[var(--accent)]/40 pb-3">
                     <div className="flex flex-col">
-                       <div className="mono-font text-[10px] font-black opacity-60 uppercase">SIGNAL ID: {currentPrompt.id}</div>
-                       <div className="mono-font text-[8px] opacity-40 uppercase tracking-widest">Matched heritage signature</div>
+                       <div className="mono-font text-[12px] font-black opacity-80 uppercase tracking-tighter text-[var(--accent)]">SIGNAL ID: {currentPrompt.id}</div>
+                       <div className="mono-font text-[9px] opacity-50 uppercase tracking-[0.2em] font-bold">Matched heritage signature</div>
                     </div>
-                    <div className="mono-font text-[10px] font-bold text-[#ff5f00] bg-[#ff5f00]/10 px-2 py-0.5 border border-[#ff5f00]/20">UNIT: FUSION</div>
+                    <div className="mono-font text-[11px] font-black text-[var(--bg)] bg-[var(--accent)] px-3 py-1 border-2 border-[var(--dark)] shadow-[2px_2px_0px_var(--dark)]">UNIT: FUSION</div>
                   </div>
 
                   <div className="space-y-6 flex-1 flex flex-col overflow-hidden">
                     <div className="space-y-2 flex-shrink-0">
-                      <div className="flex justify-between items-end px-1">
-                        <span className="text-[12px] font-bold bg-[#ff5f00] text-black px-1.5 uppercase italic tracking-tighter">Style Filter</span>
-                        <div className={`mono-font text-[11px] font-bold segmented-display ${editedStyle.length > 300 ? 'text-red-500 animate-pulse' : 'text-[#ff5f00]'}`}>
-                          [{editedStyle.length.toString().padStart(3, '0')} / 300]
+                      <div className="flex justify-between items-center px-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[14px] font-black bg-[var(--accent)] text-[var(--screen-bg)] px-2 py-0.5 uppercase italic tracking-tighter">Style Filter</span>
+                          <div className={`mono-font text-[11px] font-bold segmented-display ${editedStyle.length > 300 ? 'text-red-500 animate-pulse' : 'text-[var(--accent)] opacity-60'}`}>
+                            [{editedStyle.length.toString().padStart(3, '0')} / 300]
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 share-buttons-container">
+                          <button 
+                            onClick={() => copyToClipboard(editedStyle, 'style')} 
+                            className="text-[10px] font-black bg-[var(--accent)] text-[var(--screen-bg)] px-2 py-1 transition-all active:scale-95 border border-[var(--dark)]"
+                          >
+                            {copyStatus['style'] || 'COPY TEXT'}
+                          </button>
+                          <button 
+                            onClick={downloadShareCard}
+                            className="bg-[var(--secondary)] text-[var(--screen-bg)] p-1 border border-[var(--dark)]"
+                          >
+                            <Download size={14} />
+                          </button>
+                          <button 
+                            onClick={() => shareToTwitter(editedStyle)}
+                            className="bg-[var(--accent)] text-[var(--screen-bg)] p-1 border border-[var(--dark)]"
+                          >
+                            <Twitter size={14} />
+                          </button>
+                          <button 
+                            onClick={() => shareToFacebook(editedStyle)}
+                            className="bg-[var(--accent)] text-[var(--screen-bg)] p-1 border border-[var(--dark)]"
+                          >
+                            <Facebook size={14} />
+                          </button>
                         </div>
                       </div>
-                      <div className="relative">
+                      <div className="relative flex-shrink-0">
                         <textarea 
                           value={editedStyle}
                           onChange={(e) => setEditedStyle(e.target.value.toUpperCase())}
-                          className="w-full bg-black border border-[#ff5f00]/30 p-3 mono-font text-[14px] leading-relaxed uppercase font-bold text-[#ff5f00] outline-none h-24 custom-scrollbar shadow-[0_0_10px_rgba(255,95,0,0.1)] focus:border-[#ff5f00]"
+                          className="w-full bg-[var(--screen-bg)] border border-[var(--accent)]/30 p-4 mono-font text-[16px] leading-relaxed uppercase font-bold text-[var(--accent)] outline-none h-40 custom-scrollbar shadow-[inset_0_0_15px_rgba(var(--accent-rgb),0.05)] focus:border-[var(--accent)]"
                         />
-                        <button 
-                          onClick={() => copyToClipboard(editedStyle, 'style')} 
-                          className="absolute bottom-2 right-2 text-[9px] font-black bg-[#ff5f00] text-black px-2 py-1 transition-all active:scale-95 shadow-[2px_2px_0px_rgba(0,0,0,1)] hover:shadow-none"
-                        >
-                          {copyStatus['style'] || 'COPY'}
-                        </button>
                       </div>
                     </div>
 
                     <div className="flex-1 flex flex-col min-h-0 space-y-2">
                       <div className="flex justify-between items-center px-1 flex-shrink-0">
-                        <span className="text-[12px] font-bold bg-[#ff5f00] text-black px-1.5 uppercase italic tracking-tighter">Arrangement</span>
-                        <button onClick={() => copyToClipboard(currentPrompt.structure, 'structure')} className="text-[10px] underline uppercase hover:text-white transition-colors">{copyStatus['structure'] || 'COPY BLUEPRINT'}</button>
+                        <span className="text-[14px] font-black bg-[var(--accent)] text-[var(--screen-bg)] px-2 py-0.5 uppercase italic tracking-tighter">Arrangement</span>
+                        <button onClick={() => copyToClipboard(currentPrompt.structure, 'structure')} className="text-[11px] font-bold underline uppercase hover:text-white transition-colors text-[var(--accent)]">{copyStatus['structure'] || 'COPY BLUEPRINT'}</button>
                       </div>
-                      <div className="flex-1 bg-black p-4 border border-[#ff5f00]/10 overflow-y-auto custom-scrollbar relative">
-                        <div className="absolute top-0 right-0 p-1 opacity-5 mono-font text-[40px] pointer-events-none font-black">SA</div>
-                        <pre className="text-[12px] leading-relaxed uppercase whitespace-pre-wrap opacity-90 text-[#ff5f00] mono-font">{currentPrompt.structure}</pre>
+                      <div className="flex-1 bg-[var(--screen-bg)] p-4 border border-[var(--accent)]/10 overflow-y-auto custom-scrollbar relative">
+                        <div className="absolute top-0 right-0 p-1 opacity-5 mono-font text-[40px] pointer-events-none font-black text-[var(--accent)]">SA</div>
+                        <pre className="text-[12px] leading-relaxed uppercase whitespace-pre-wrap opacity-90 text-[var(--accent)] mono-font">{currentPrompt.structure}</pre>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center border-2 border-dashed border-[#ff5f00]/10">
+                <div className="flex-1 flex items-center justify-center border-2 border-dashed border-[var(--accent)]/10">
                   <div className="text-center space-y-4 opacity-20">
-                    <div className="mono-font text-3xl font-black italic tracking-tighter text-[#ff5f00]">AWAITING_SIGNAL</div>
-                    <div className="mono-font text-[9px] tracking-[0.5em] uppercase">Configure nodes to distillation unit</div>
+                    <div className="mono-font text-3xl font-black italic tracking-tighter text-[var(--accent)]">AWAITING_SIGNAL</div>
+                    <div className="mono-font text-[9px] tracking-[0.5em] uppercase text-[var(--accent)]">Configure nodes to distillation unit</div>
                   </div>
                 </div>
               )}
@@ -437,28 +858,36 @@ const App: React.FC = () => {
 
           {/* Mini Health Monitor */}
           <div className="flex gap-4 flex-shrink-0 h-14">
-             <div className="hardware-panel flex-1 px-4 flex justify-between items-center bg-[#fdfdfd]">
-                <div className="mono-font text-[10px] font-bold opacity-40 uppercase">Sys_Node</div>
+             <div className="hardware-panel flex-1 px-4 flex justify-between items-center bg-[var(--panel)]">
+                <div className="mono-font text-[10px] font-bold opacity-40 uppercase text-[var(--dark)]">Sys_Node</div>
                 <div className="flex items-center gap-2">
-                  <div className="mono-font text-[11px] font-bold">STABLE</div>
+                  <div className="mono-font text-[11px] font-bold text-[var(--dark)]">STABLE</div>
                   <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
                 </div>
              </div>
-             <div className="hardware-panel flex-1 px-4 flex justify-between items-center bg-[#fdfdfd]">
-                <div className="mono-font text-[10px] font-bold opacity-40 uppercase">Sync_Lock</div>
-                <div className="mono-font text-[11px] font-bold">LOCKED</div>
+             <div className="hardware-panel flex-1 px-4 flex justify-between items-center bg-[var(--panel)]">
+                <div className="mono-font text-[10px] font-bold opacity-40 uppercase text-[var(--dark)]">Sig_Strength</div>
+                <div className="flex items-end gap-0.5 h-4">
+                  {[0.4, 0.7, 0.5, 0.9, 0.6].map((h, i) => (
+                    <div 
+                      key={i} 
+                      className="w-1 bg-[var(--accent)] animate-[pulse_1s_infinite]" 
+                      style={{ height: `${h * 100}%`, animationDelay: `${i * 0.1}s` }}
+                    ></div>
+                  ))}
+                </div>
              </div>
           </div>
         </div>
       </div>
 
       {/* Footer - Compact */}
-      <footer className="w-full max-w-7xl mx-auto flex justify-between items-center opacity-40 py-4 flex-shrink-0 border-t border-black/10 mt-auto">
+      <footer className="w-full max-w-7xl mx-auto flex justify-between items-center opacity-40 py-4 flex-shrink-0 border-t border-[var(--dark)]/10 mt-auto">
         <div className="flex gap-6">
-          <a href="https://jackrighteous.com/blogs/guides-using-suno-ai-music-creation/advanced-suno-prompt-engineering-guide" target="_blank" rel="noreferrer" className="mono-font text-[9px] uppercase font-black hover:text-[#ff5f00]">Documentation</a>
-          <span className="mono-font text-[9px] uppercase font-bold">© 1994-2025 SURGICAL UNIT</span>
+          <a href="https://jackrighteous.com/blogs/guides-using-suno-ai-music-creation/advanced-suno-prompt-engineering-guide" target="_blank" rel="noreferrer" className="mono-font text-[9px] uppercase font-black hover:text-[var(--accent)] text-[var(--dark)]">Documentation</a>
+          <span className="mono-font text-[9px] uppercase font-bold text-[var(--dark)]">© 1994-2025 SURGICAL UNIT</span>
         </div>
-        <div className="mono-font text-[9px] uppercase font-black tracking-[0.2em] hidden sm:block">
+        <div className="mono-font text-[9px] uppercase font-black tracking-[0.2em] hidden sm:block text-[var(--dark)]">
           ALCHEMIZING HERITAGE SIGNAL
         </div>
       </footer>
@@ -478,8 +907,8 @@ const App: React.FC = () => {
         }
         @keyframes glitch {
           0% { transform: translate(0); text-shadow: none; }
-          2% { transform: translate(-1px, 1px); text-shadow: 1px 0 #ff5f00; }
-          4% { transform: translate(1px, -1px); text-shadow: -1px 0 #faff00; }
+          2% { transform: translate(-1px, 1px); text-shadow: 1px 0 var(--accent); }
+          4% { transform: translate(1px, -1px); text-shadow: -1px 0 var(--secondary); }
           6% { transform: translate(0); text-shadow: none; }
           100% { transform: translate(0); text-shadow: none; }
         }
@@ -487,14 +916,14 @@ const App: React.FC = () => {
           width: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 95, 0, 0.05);
+          background: rgba(var(--accent-rgb), 0.05);
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 95, 0, 0.2);
+          background: rgba(var(--accent-rgb), 0.2);
           border-radius: 0px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 95, 0, 0.4);
+          background: rgba(var(--accent-rgb), 0.4);
         }
       `}} />
     </div>
