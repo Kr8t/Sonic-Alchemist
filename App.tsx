@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Twitter, Facebook, Download, Share2, Sun, Moon, Save, Trash2, FolderOpen, Info, FileText } from 'lucide-react';
+import { Twitter, Facebook, Download, Share2, Sun, Moon, Save, Trash2, FolderOpen, Info, FileText, Volume2, VolumeX } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { SAGenre, GeneratedPrompt, VocalStyle } from './types';
 import { generateMusicPrompt } from './services/geminiService';
@@ -150,6 +150,57 @@ const LOG_MESSAGES = [
   "WRITING SUNO-STYLE PROTOCOLS..."
 ];
 
+// Sound Engine
+const audioCtxRef = { current: null as AudioContext | null };
+const getAudioCtx = () => {
+  if (!audioCtxRef.current) {
+    audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  if (audioCtxRef.current.state === 'suspended') {
+    audioCtxRef.current.resume();
+  }
+  return audioCtxRef.current;
+};
+
+const playSound = (freq: number, type: OscillatorType, duration: number, volume: number = 0.1) => {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) { /* Audio blocked */ }
+};
+
+const playRetroClick = () => playSound(800, 'sine', 0.05, 0.05);
+const playRetroRandom = () => {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(200, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.03, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  } catch (e) {}
+};
+const playRetroSuccess = () => {
+  playSound(523.25, 'sine', 0.2, 0.08);
+  setTimeout(() => playSound(659.25, 'sine', 0.3, 0.06), 100);
+};
+const playRetroToggle = (on: boolean) => playSound(on ? 600 : 300, 'triangle', 0.1, 0.05);
+
 const GENRE_PRESETS = [
   {
     name: "AMAPIANO",
@@ -257,6 +308,7 @@ const LoadingScreen: React.FC<{ progress: number, logIndex: number, genres: stri
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<'te-core' | 'cyberpunk'>('te-core');
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [selectedGenres, setSelectedGenres] = useState<Set<SAGenre>>(new Set([SAGenre.AMAPIANO]));
   const [mood, setMood] = useState('');
   const [instruments, setInstruments] = useState('');
@@ -285,10 +337,12 @@ const App: React.FC = () => {
   }, [theme]);
 
   const toggleTheme = () => {
+    if (soundEnabled) playRetroToggle(theme === 'cyberpunk');
     setTheme(prev => prev === 'te-core' ? 'cyberpunk' : 'te-core');
   };
 
   const toggleGenre = (g: SAGenre) => {
+    if (soundEnabled) playRetroClick();
     const next = new Set(selectedGenres);
     if (next.has(g)) {
       if (next.size > 1) next.delete(g);
@@ -329,10 +383,12 @@ const App: React.FC = () => {
   }, [currentPrompt]);
 
   const handleRandomizeField = (setter: (val: string) => void, pool: string[]) => {
+    if (soundEnabled) playRetroRandom();
     setter(pool[Math.floor(Math.random() * pool.length)]);
   };
 
   const applyGenrePreset = (preset: typeof GENRE_PRESETS[0]) => {
+    if (soundEnabled) playRetroSuccess();
     setSelectedGenres(new Set(preset.genres));
     setMood(preset.mood);
     setInstruments(preset.instruments);
@@ -342,6 +398,7 @@ const App: React.FC = () => {
   };
 
   const handleRandomizeAll = () => {
+    if (soundEnabled) playRetroRandom();
     handleRandomizeField(setMood, MOODS);
     handleRandomizeField(setInstruments, INSTRUMENTS);
     handleRandomizeField(setTempo, TEMPOS);
@@ -354,6 +411,7 @@ const App: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!mood.trim()) return;
+    if (soundEnabled) playRetroSuccess();
     setIsLoading(true);
     setCurrentPrompt(null);
     try {
@@ -376,6 +434,7 @@ const App: React.FC = () => {
       };
       setLoadingProgress(100);
       setTimeout(() => {
+        if (soundEnabled) playRetroSuccess();
         setCurrentPrompt(newPrompt);
         setCopyStatus({});
         setIsLoading(false);
@@ -386,10 +445,11 @@ const App: React.FC = () => {
   };
 
   const copyToClipboard = useCallback((text: string, key: string) => {
+    if (soundEnabled) playRetroClick();
     navigator.clipboard.writeText(text);
     setCopyStatus(prev => ({ ...prev, [key]: 'COPIED' }));
     setTimeout(() => setCopyStatus(prev => ({ ...prev, [key]: '' })), 2000);
-  }, []);
+  }, [soundEnabled]);
 
   const shareToTwitter = (text: string) => {
     // Twitter limit is 280. We leave some space for the intro and hashtags.
@@ -529,6 +589,17 @@ Generated by Sonic Alchemist
           </div>
         </div>
         <div className="flex gap-6 items-center">
+          <button 
+            onClick={() => {
+              const next = !soundEnabled;
+              setSoundEnabled(next);
+              if (next) playRetroClick();
+            }}
+            className={`hardware-panel p-2 flex items-center justify-center transition-colors ${soundEnabled ? 'text-[var(--accent)]' : 'text-[var(--dark)] opacity-40'}`}
+            title={soundEnabled ? "Mute Sounds" : "Unmute Sounds"}
+          >
+            {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          </button>
           <div className="flex hardware-panel overflow-hidden border-2 border-[var(--dark)]">
             <button 
               onClick={() => setTheme('te-core')}
@@ -628,7 +699,13 @@ Generated by Sonic Alchemist
               <div className="flex justify-between items-center border-b border-[var(--dark)]/10 pb-1">
                 <span className="mono-font text-[12px] font-bold uppercase tracking-widest bg-[var(--dark)] text-[var(--bg)] px-2 py-0.5">02 BLUEPRINT</span>
                 <div className="flex gap-3">
-                  <button onClick={() => { setMood(''); setInstruments(''); setTempo(''); }} className="mono-font text-[13px] font-bold uppercase text-[var(--dark)]/40 hover:text-[var(--dark)] hover:underline">
+                  <button 
+                    onClick={() => {
+                      if (soundEnabled) playRetroClick();
+                      setMood(''); setInstruments(''); setTempo('');
+                    }} 
+                    className="mono-font text-[13px] font-bold uppercase text-[var(--dark)]/40 hover:text-[var(--dark)] hover:underline"
+                  >
                     CLEAR
                   </button>
                   <button onClick={() => handleRandomizeField(setMood, MOODS)} className="mono-font text-[13px] font-bold uppercase text-[var(--accent)] hover:underline">
@@ -639,6 +716,7 @@ Generated by Sonic Alchemist
                   </button>
                   <button 
                     onClick={() => {
+                      if (soundEnabled) playRetroRandom();
                       const styles: VocalStyle[] = ['MELODIC', 'RHYTHMIC CHANT', 'SPOKEN WORD', 'AD-LIBS', 'WHISPERED', 'GROWLED', 'AUTOTUNED', 'HARMONIZED', 'NONE'];
                       const randomStyle = styles[Math.floor(Math.random() * styles.length)];
                       setVocalStyle(randomStyle);
@@ -759,7 +837,10 @@ Generated by Sonic Alchemist
                     </div>
                   </div>
                   <button 
-                    onClick={() => setIncludeVocals(!includeVocals)}
+                    onClick={() => {
+                      if (soundEnabled) playRetroToggle(!includeVocals);
+                      setIncludeVocals(!includeVocals);
+                    }}
                     className={`w-16 h-8 rounded-full transition-all relative border-2 border-[var(--dark)] ${includeVocals ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'}`}
                   >
                     <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all shadow-[1px_1px_0px_rgba(0,0,0,0.2)] ${includeVocals ? 'left-9' : 'left-1'}`}></div>
@@ -927,26 +1008,38 @@ Generated by Sonic Alchemist
                             {copyStatus['style'] || 'COPY TEXT'}
                           </button>
                           <button 
-                            onClick={downloadPromptAsText}
+                            onClick={() => {
+                              if (soundEnabled) playRetroClick();
+                              downloadPromptAsText();
+                            }}
                             title="Download Prompt (Text)"
                             className="bg-[var(--accent)] text-[var(--screen-bg)] p-1 border border-[var(--dark)]"
                           >
                             <FileText size={14} />
                           </button>
                           <button 
-                            onClick={downloadShareCard}
+                            onClick={() => {
+                              if (soundEnabled) playRetroClick();
+                              downloadShareCard();
+                            }}
                             className="bg-[var(--secondary)] text-[var(--screen-bg)] p-1 border border-[var(--dark)]"
                           >
                             <Download size={14} />
                           </button>
                           <button 
-                            onClick={() => shareToTwitter(editedStyle)}
+                            onClick={() => {
+                              if (soundEnabled) playRetroClick();
+                              shareToTwitter(editedStyle);
+                            }}
                             className="bg-[var(--accent)] text-[var(--screen-bg)] p-1 border border-[var(--dark)]"
                           >
                             <Twitter size={14} />
                           </button>
                           <button 
-                            onClick={() => shareToFacebook(editedStyle)}
+                            onClick={() => {
+                              if (soundEnabled) playRetroClick();
+                              shareToFacebook(editedStyle);
+                            }}
                             className="bg-[var(--accent)] text-[var(--screen-bg)] p-1 border border-[var(--dark)]"
                           >
                             <Facebook size={14} />
