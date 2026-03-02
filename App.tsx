@@ -201,6 +201,57 @@ const playRetroSuccess = () => {
 };
 const playRetroToggle = (on: boolean) => playSound(on ? 600 : 300, 'triangle', 0.1, 0.05);
 
+const Visualizer: React.FC<{ genres: Set<SAGenre>, theme: string }> = ({ genres, theme }) => {
+  const bars = 24;
+  const isAmapiano = genres.has(SAGenre.AMAPIANO) || genres.has(SAGenre.JAZZ_AMAPIANO);
+  const isGqom = genres.has(SAGenre.GQOM) || genres.has(SAGenre.HARD_GQOM);
+  
+  return (
+    <div className={`flex items-end justify-between h-32 w-full gap-1 px-2 transition-opacity duration-500 ${theme === 'tactical' ? 'opacity-30' : 'opacity-60'}`}>
+      {Array.from({ length: bars }).map((_, i) => {
+        // Base duration influenced by genre
+        let baseDuration = isGqom ? 0.4 : isAmapiano ? 1.2 : 0.8;
+        
+        // Theme influence on speed
+        if (theme === 'tactical') baseDuration *= 0.8; // Faster, more high-tech
+        if (theme === 'organic') baseDuration *= 1.2;  // Slower, more natural
+        
+        const duration = baseDuration + (Math.random() * baseDuration * 0.5);
+        const delay = i * (isGqom ? 0.02 : isAmapiano ? 0.1 : 0.05);
+        
+        // Height variance based on genre
+        const minHeight = isGqom ? 10 : isAmapiano ? 30 : 20;
+        const maxHeight = isGqom ? 100 : isAmapiano ? 70 : 90;
+        const heightRange = maxHeight - minHeight;
+        const randomHeight = minHeight + Math.random() * heightRange;
+
+        // Animation timing function based on theme
+        const timingFunction = theme === 'tactical' ? 'steps(4, end)' : theme === 'organic' ? 'ease-in-out' : 'linear';
+        
+        return (
+          <div 
+            key={i}
+            className={`flex-1 bg-[var(--accent)] transition-all duration-500 ${theme === 'organic' ? 'rounded-full' : theme === 'glass' ? 'rounded-sm' : ''}`}
+            style={{
+              height: `${randomHeight}%`,
+              animation: `visualizer-bounce ${duration}s ${timingFunction} ${delay}s infinite alternate`,
+              boxShadow: theme === 'glass' || theme === 'tactical' ? '0 0 10px rgba(var(--accent-rgb), 0.5)' : 'none',
+              opacity: isGqom ? 0.8 + Math.random() * 0.2 : 1
+            }}
+          />
+        );
+      })}
+      <style>{`
+        @keyframes visualizer-bounce {
+          0% { height: 15%; opacity: 0.4; transform: scaleY(1); }
+          50% { opacity: 0.7; }
+          100% { height: 85%; opacity: 1; transform: scaleY(1.05); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
 const GENRE_PRESETS = [
   {
     name: "AMAPIANO",
@@ -237,11 +288,73 @@ interface InstrumentPreset {
   value: string;
 }
 
-const LoadingScreen: React.FC<{ progress: number, logIndex: number, genres: string[] }> = ({ progress, logIndex, genres }) => {
+const VisualizerBars: React.FC<{ genres: string[], theme: string }> = ({ genres, theme }) => {
+  const primaryGenre = (genres[0] || 'AMAPIANO') as SAGenre;
+  
+  const getGenreConfig = (genre: SAGenre) => {
+    const isDark = genre.includes('GQOM') || genre.includes('DARK') || genre.includes('ROUGH');
+    const isTech = genre.includes('TECH') || genre.includes('QUANTUM');
+    const isSoulful = genre.includes('SOULFUL') || genre.includes('JAZZ') || genre.includes('PRIVATE');
+    
+    if (isDark) return { color: '#ff3e3e', speed: '0.4s', count: 14, curve: 'ease-in' };
+    if (isTech) return { color: '#00f2ff', speed: '0.2s', count: 20, curve: 'steps(3)' };
+    if (isSoulful) return { color: '#ffb347', speed: '1.5s', count: 8, curve: 'cubic-bezier(0.4, 0, 0.2, 1)' };
+    return { color: 'var(--accent)', speed: '0.8s', count: 12, curve: 'ease-in-out' };
+  };
+
+  const config = getGenreConfig(primaryGenre);
+  
   return (
-    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-[var(--screen-bg)] p-6 overflow-hidden">
+    <div className="flex items-end justify-center gap-[3px] h-10 w-full">
+      {Array.from({ length: config.count }).map((_, i) => (
+        <div 
+          key={i}
+          className="w-1 rounded-t-[1px] transition-colors duration-500"
+          style={{ 
+            backgroundColor: theme === 'vaporwave' ? '#05ffa1' : config.color,
+            boxShadow: theme === 'vaporwave' ? '0 0 10px #05ffa1' : `0 0 8px ${config.color}44`,
+            height: '20%',
+            animation: `visualizerBar ${config.speed} ${config.curve} infinite alternate`,
+            animationDelay: `${i * (parseFloat(config.speed) / config.count)}s`
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+const LoadingScreen: React.FC<{ progress: number, logIndex: number, genres: string[], theme: string }> = ({ progress, logIndex, genres, theme }) => {
+  return (
+    <div className={`absolute inset-0 z-40 flex flex-col items-center justify-center bg-[var(--screen-bg)] p-6 overflow-hidden ${theme === 'glass' ? 'backdrop-blur-md' : ''}`}>
+      {/* Vaporwave Background Elements */}
+      {theme === 'vaporwave' && (
+        <>
+          {/* Scrolling Grid */}
+          <div className="absolute inset-0 opacity-30 pointer-events-none" style={{
+            perspective: '500px',
+            background: 'linear-gradient(to bottom, transparent 0%, var(--bg) 100%)'
+          }}>
+            <div className="absolute inset-0 animate-[gridScroll_2s_linear_infinite]" style={{
+              backgroundImage: `linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)`,
+              backgroundSize: '40px 40px',
+              transform: 'rotateX(60deg) translateY(-50%)',
+              transformOrigin: 'top'
+            }}></div>
+          </div>
+          
+          {/* Retro Sun */}
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full opacity-40 blur-sm" style={{
+            background: 'linear-gradient(to bottom, #ff71ce 0%, #fffb96 100%)',
+            maskImage: 'linear-gradient(to bottom, black 0%, black 50%, transparent 50%, transparent 55%, black 55%, black 65%, transparent 65%, transparent 72%, black 72%, black 80%, transparent 80%, transparent 88%, black 88%, black 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 50%, transparent 50%, transparent 55%, black 55%, black 65%, transparent 65%, transparent 72%, black 72%, black 80%, transparent 80%, transparent 88%, black 88%, black 100%)'
+          }}></div>
+        </>
+      )}
+
       {/* Scanning Line */}
-      <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--accent)]/60 shadow-[0_0_15px_var(--accent)] animate-[scanLine_4s_linear_infinite] z-50"></div>
+      {(theme === 'tactical' || theme === 'vaporwave') && (
+        <div className={`absolute top-0 left-0 w-full h-[2px] z-50 ${theme === 'vaporwave' ? 'bg-[#ff71ce] shadow-[0_0_15px_#ff71ce]' : 'bg-[var(--accent)]/60 shadow-[0_0_15px_var(--accent)]'} animate-[scanLine_4s_linear_infinite]`}></div>
+      )}
       
       {/* Background Data Fragments */}
       <div className="absolute inset-0 opacity-10 pointer-events-none select-none mono-font text-[8px] leading-tight overflow-hidden break-all text-[var(--accent)]">
@@ -254,60 +367,99 @@ const LoadingScreen: React.FC<{ progress: number, logIndex: number, genres: stri
 
       <div className="w-full max-w-lg space-y-6 relative z-10">
         {/* Radar / Oscillo Visualization */}
-        <div className="flex justify-center mb-4">
+        <div className="flex flex-col items-center mb-4 space-y-4">
           <div className="relative w-24 h-24">
-            <svg viewBox="0 0 100 100" className="w-full h-full text-[var(--accent)]">
+            <svg viewBox="0 0 100 100" className={`w-full h-full ${theme === 'vaporwave' ? 'text-[#05ffa1]' : 'text-[var(--accent)]'}`}>
               <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 2" className="opacity-20" />
               <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 2" className="opacity-40" />
               <line x1="50" y1="50" x2="50" y2="2" stroke="currentColor" strokeWidth="1" className="animate-[spin_4s_linear_infinite] origin-center" />
               <path d="M10 50 Q 25 20, 40 50 T 70 50 T 90 50" fill="none" stroke="currentColor" strokeWidth="1" className="animate-[pulse_0.5s_infinite]" />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-               <div className="w-1 h-1 bg-[var(--accent)] rounded-full animate-ping"></div>
+               <div className={`w-1 h-1 rounded-full animate-ping ${theme === 'vaporwave' ? 'bg-[#ff71ce]' : 'bg-[var(--accent)]'}`}></div>
             </div>
           </div>
+          
+          <VisualizerBars genres={genres} theme={theme} />
         </div>
 
         <div className="space-y-4">
-          <div className="flex justify-between items-end">
-             <div className="mono-font text-2xl font-black italic tracking-tighter text-[var(--accent)] animate-[glitch_2s_infinite]">ALCH_DISTILL_v4.0</div>
-             <div className="mono-font text-[10px] font-bold text-[var(--accent)]/60 tabular-nums">P_SIG: {progress.toFixed(1)}%</div>
+          <div className="flex flex-col items-center space-y-2">
+             <div className={`mono-font text-3xl font-black italic tracking-tighter animate-[retroText_3s_infinite] text-center ${theme === 'vaporwave' ? 'text-[#ff71ce] drop-shadow-[0_0_8px_#ff71ce]' : 'text-[var(--accent)]'}`}>
+               {theme === 'vaporwave' ? 'VAPOR_DISTILL_v8.4' : 'ALCH_DISTILL_v4.0'}
+             </div>
+             <div className="flex justify-between w-full items-end px-1">
+                <div className="mono-font text-[9px] font-bold text-[var(--accent)]/40 uppercase tracking-[0.3em] animate-pulse">
+                  Auth: {genres[0] || 'GENERIC'}
+                </div>
+                <div className="mono-font text-[10px] font-bold text-[var(--accent)]/60 tabular-nums">
+                  SIG_LVL: {progress.toFixed(1)}%
+                </div>
+             </div>
           </div>
           
-          <div className="h-2 w-full bg-[var(--accent)]/10 overflow-hidden relative border border-[var(--accent)]/30 shadow-[0_0_10px_rgba(var(--accent-rgb),0.1)]">
-            <div className="h-full bg-[var(--accent)] transition-all duration-300 relative" style={{ width: `${progress}%` }}>
+          <div className={`h-3 w-full bg-[var(--accent)]/10 overflow-hidden relative border border-[var(--accent)]/30 shadow-[0_0_10px_rgba(var(--accent-rgb),0.1)] ${theme === 'organic' ? 'rounded-full' : ''} ${theme === 'vaporwave' ? 'border-[#05ffa1] shadow-[0_0_15px_rgba(5,255,161,0.3)]' : ''}`}>
+            <div className={`h-full transition-all duration-300 relative ${theme === 'vaporwave' ? 'bg-gradient-to-r from-[#ff71ce] via-[#b967ff] to-[#01cdfe]' : 'bg-[var(--accent)]'}`} style={{ width: `${progress}%` }}>
               <div className="absolute top-0 right-0 h-full w-4 bg-white/40 blur-[2px] animate-[shimmer_1.5s_infinite]"></div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-4">
-             <div className="bg-[var(--accent)]/5 border border-[var(--accent)]/20 p-3">
-                <div className="mono-font text-[9px] font-bold text-[var(--accent)] mb-1 uppercase tracking-tighter">Current Matrix</div>
-                <div className="mono-font text-[11px] text-[var(--accent)] truncate uppercase font-bold">
+             <div className={`bg-[var(--accent)]/5 border border-[var(--accent)]/20 p-3 ${theme === 'organic' ? 'rounded-xl' : theme === 'glass' ? 'rounded-lg' : ''} ${theme === 'vaporwave' ? 'border-[#01cdfe]/40 bg-[#01cdfe]/5' : ''}`}>
+                <div className={`mono-font text-[9px] font-bold mb-1 uppercase tracking-tighter ${theme === 'vaporwave' ? 'text-[#05ffa1]' : 'text-[var(--accent)]'}`}>Current Matrix</div>
+                <div className={`mono-font text-[11px] truncate uppercase font-bold ${theme === 'vaporwave' ? 'text-[#01cdfe]' : 'text-[var(--accent)]'}`}>
                    {genres.join(' + ')}
                 </div>
              </div>
-             <div className="bg-[var(--accent)]/5 border border-[var(--accent)]/20 p-3">
-                <div className="mono-font text-[9px] font-bold text-[var(--accent)] mb-1 uppercase tracking-tighter">Extraction Log</div>
-                <div className="mono-font text-[11px] text-[var(--accent)] truncate uppercase font-bold animate-pulse">
+             <div className={`bg-[var(--accent)]/5 border border-[var(--accent)]/20 p-3 ${theme === 'organic' ? 'rounded-xl' : theme === 'glass' ? 'rounded-lg' : ''} ${theme === 'vaporwave' ? 'border-[#ff71ce]/40 bg-[#ff71ce]/5' : ''}`}>
+                <div className={`mono-font text-[9px] font-bold mb-1 uppercase tracking-tighter ${theme === 'vaporwave' ? 'text-[#05ffa1]' : 'text-[var(--accent)]'}`}>Extraction Log</div>
+                <div className={`mono-font text-[11px] truncate uppercase font-bold animate-pulse ${theme === 'vaporwave' ? 'text-[#ff71ce]' : 'text-[var(--accent)]'}`}>
                    {LOG_MESSAGES[logIndex]}
                 </div>
              </div>
           </div>
-
-          <div className="pt-2">
-             <div className="mono-font text-[9px] text-[var(--accent)]/40 uppercase tracking-[0.2em] leading-relaxed text-center">
-               Isolating Sub-Harmonics // Securing Sync-Lock 128 // Distilling Heritage Nodes
-             </div>
-          </div>
         </div>
       </div>
+      <style>{`
+        @keyframes gridScroll {
+          0% { background-position: 0 0; }
+          100% { background-position: 0 40px; }
+        }
+        @keyframes scanLine {
+          0% { top: 0; opacity: 0; }
+          5% { opacity: 1; }
+          95% { opacity: 1; }
+          100% { top: 100%; opacity: 0; }
+        }
+        @keyframes glitch {
+          0% { transform: translate(0); }
+          20% { transform: translate(-2px, 2px); }
+          40% { transform: translate(-2px, -2px); }
+          60% { transform: translate(2px, 2px); }
+          80% { transform: translate(2px, -2px); }
+          100% { transform: translate(0); }
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(250%); }
+        }
+        @keyframes visualizerBar {
+          0% { height: 20%; opacity: 0.4; }
+          100% { height: 100%; opacity: 1; }
+        }
+        @keyframes retroText {
+          0%, 100% { opacity: 1; transform: scale(1); filter: blur(0px); }
+          50% { opacity: 0.8; transform: scale(0.98); filter: blur(0.5px); }
+          51% { opacity: 1; transform: scale(1.02); filter: blur(0px); }
+          52% { opacity: 0.9; transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 };
 
 const App: React.FC = () => {
-  const [theme, setTheme] = useState<'te-core' | 'cyberpunk'>('te-core');
+  const [theme, setTheme] = useState<'tactical' | 'editorial' | 'glass' | 'organic' | 'vaporwave'>('organic');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [selectedGenres, setSelectedGenres] = useState<Set<SAGenre>>(new Set([SAGenre.AMAPIANO]));
   const [mood, setMood] = useState('');
@@ -337,8 +489,11 @@ const App: React.FC = () => {
   }, [theme]);
 
   const toggleTheme = () => {
-    if (soundEnabled) playRetroToggle(theme === 'cyberpunk');
-    setTheme(prev => prev === 'te-core' ? 'cyberpunk' : 'te-core');
+    const themes: ('tactical' | 'editorial' | 'glass' | 'organic' | 'vaporwave')[] = ['tactical', 'editorial', 'glass', 'organic', 'vaporwave'];
+    const currentIndex = themes.indexOf(theme);
+    const nextTheme = themes[(currentIndex + 1) % themes.length];
+    if (soundEnabled) playRetroToggle(nextTheme !== 'tactical');
+    setTheme(nextTheme);
   };
 
   const toggleGenre = (g: SAGenre) => {
@@ -602,16 +757,28 @@ Generated by Sonic Alchemist
           </button>
           <div className="flex hardware-panel overflow-hidden border-2 border-[var(--dark)]">
             <button 
-              onClick={() => setTheme('te-core')}
-              className={`px-4 py-2 mono-font text-[11px] font-black uppercase transition-all ${theme === 'te-core' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'bg-[var(--panel)] text-[var(--dark)] opacity-40 hover:opacity-100'}`}
+              onClick={() => setTheme('tactical')}
+              className={`px-3 py-2 mono-font text-[10px] font-black uppercase transition-all ${theme === 'tactical' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'bg-[var(--panel)] text-[var(--dark)] opacity-40 hover:opacity-100'}`}
             >
-              TE-CORE
+              TACTICAL
             </button>
             <button 
-              onClick={() => setTheme('cyberpunk')}
-              className={`px-4 py-2 mono-font text-[11px] font-black uppercase transition-all border-l-2 border-[var(--dark)] ${theme === 'cyberpunk' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'bg-[var(--panel)] text-[var(--dark)] opacity-40 hover:opacity-100'}`}
+              onClick={() => setTheme('editorial')}
+              className={`px-3 py-2 mono-font text-[10px] font-black uppercase transition-all border-l-2 border-[var(--dark)] ${theme === 'editorial' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'bg-[var(--panel)] text-[var(--dark)] opacity-40 hover:opacity-100'}`}
             >
-              CYBERPUNK
+              EDITORIAL
+            </button>
+            <button 
+              onClick={() => setTheme('glass')}
+              className={`px-3 py-2 mono-font text-[10px] font-black uppercase transition-all border-l-2 border-[var(--dark)] ${theme === 'glass' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'bg-[var(--panel)] text-[var(--dark)] opacity-40 hover:opacity-100'}`}
+            >
+              GLASS
+            </button>
+            <button 
+              onClick={() => setTheme('organic')}
+              className={`px-3 py-2 mono-font text-[10px] font-black uppercase transition-all border-l-2 border-[var(--dark)] ${theme === 'organic' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'bg-[var(--panel)] text-[var(--dark)] opacity-40 hover:opacity-100'}`}
+            >
+              ORGANIC
             </button>
           </div>
           <div className="hidden sm:flex flex-col items-end">
@@ -970,15 +1137,42 @@ Generated by Sonic Alchemist
           <div className="hardware-panel p-1.5 flex-1 flex flex-col bg-[var(--screen-bg)] border-[3px] overflow-hidden">
             <div ref={displayRef} className="display-screen flex-1 p-5 relative flex flex-col overflow-hidden">
               {/* CRT Overlays */}
-              <div className="absolute inset-0 pointer-events-none opacity-20 mix-blend-screen" style={{ backgroundImage: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))', backgroundSize: '100% 3px, 4px 100%' }}></div>
-              <div className="absolute inset-0 pointer-events-none opacity-5 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+              {theme === 'tactical' && (
+                <>
+                  <div className="absolute inset-0 pointer-events-none opacity-20 mix-blend-screen" style={{ backgroundImage: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))', backgroundSize: '100% 3px, 4px 100%' }}></div>
+                  <div className="absolute inset-0 pointer-events-none opacity-5 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+                </>
+              )}
+              {theme === 'editorial' && (
+                <div className="absolute inset-0 pointer-events-none opacity-10 bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')] mix-blend-multiply"></div>
+              )}
+              {theme === 'glass' && (
+                <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-white/20 to-transparent"></div>
+              )}
 
               {isLoading && (
                 <LoadingScreen 
                   progress={loadingProgress} 
                   logIndex={logIndex} 
                   genres={[...selectedGenres].map(g => g.toString())} 
+                  theme={theme}
                 />
+              )}
+
+              {!isLoading && !currentPrompt && (
+                <div className="flex-1 flex flex-col items-center justify-center space-y-8 opacity-40">
+                  <div className="w-full max-w-md space-y-4">
+                    <div className="flex justify-between items-end border-b border-[var(--accent)]/20 pb-2">
+                      <span className="mono-font text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">Signal Visualizer</span>
+                      <span className="mono-font text-[8px] opacity-60 uppercase">Real-time Matrix Monitoring</span>
+                    </div>
+                    <Visualizer genres={selectedGenres} theme={theme} />
+                  </div>
+                  <div className="text-center space-y-2">
+                    <div className="mono-font text-[14px] font-black uppercase tracking-[0.4em] text-[var(--accent)]">System Idle</div>
+                    <div className="mono-font text-[10px] uppercase opacity-60">Awaiting Heritage Signal Input...</div>
+                  </div>
+                </div>
               )}
 
               {currentPrompt ? (
