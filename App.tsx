@@ -279,6 +279,33 @@ const GENRE_PRESETS = [
     tempo: "122 BPM / AFRO-TECH SHUFFLE",
     vocalStyle: "HARMONIZED" as VocalStyle,
     includeVocals: true
+  },
+  {
+    name: "SGIJA",
+    genres: [SAGenre.SGIJA, SAGenre.AMAPIANO],
+    mood: "MAMELODI MIDNIGHT / SHARP SGIJA PULSE",
+    instruments: "OVERDRIVEN SGIJA WHISTLE / SUB-LOW LOG DRUMS / SURGICAL TRANSIENTS",
+    tempo: "113 BPM / LAID BACK SGIJA",
+    vocalStyle: "AD-LIBS" as VocalStyle,
+    includeVocals: true
+  },
+  {
+    name: "TECH-GQOM",
+    genres: [SAGenre.TECH_GOM, SAGenre.HARD_GQOM],
+    mood: "SURGICAL WAREHOUSE ECHO / MINIMALIST PRECISION",
+    instruments: "909 HI-HAT CHIRPS / METALLIC PIPE DRIPS / RESAMPLING DELAY TAILS",
+    tempo: "124 BPM / SURGICAL MINIMALISM",
+    vocalStyle: "RHYTHMIC CHANT" as VocalStyle,
+    includeVocals: true
+  },
+  {
+    name: "AFRO-TECH",
+    genres: [SAGenre.AFRO_TECH, SAGenre.ANCESTRAL],
+    mood: "AFRO-TECH RITUAL SPIRIT / ANCESTRAL ECHO",
+    instruments: "TRIBAL CHANTS / TRADITIONAL DJEMBE TAP / ETHEREAL PADS",
+    tempo: "122 BPM / AFRO-TECH SHUFFLE",
+    vocalStyle: "HARMONIZED" as VocalStyle,
+    includeVocals: true
   }
 ];
 
@@ -303,22 +330,31 @@ const VisualizerBars: React.FC<{ genres: string[], theme: string }> = ({ genres,
   };
 
   const config = getGenreConfig(primaryGenre);
+  const isVapor = theme === 'vaporwave';
   
   return (
-    <div className="flex items-end justify-center gap-[3px] h-10 w-full">
+    <div className="flex items-end justify-center gap-[3px] h-10 w-full relative">
       {Array.from({ length: config.count }).map((_, i) => (
         <div 
           key={i}
-          className="w-1 rounded-t-[1px] transition-colors duration-500"
+          className={`w-1 rounded-t-[1px] transition-all duration-500 ${isVapor ? 'animate-[vaporGlitch_4s_infinite]' : ''}`}
           style={{ 
-            backgroundColor: theme === 'vaporwave' ? '#05ffa1' : config.color,
-            boxShadow: theme === 'vaporwave' ? '0 0 10px #05ffa1' : `0 0 8px ${config.color}44`,
+            background: isVapor 
+              ? `linear-gradient(to top, #ff71ce, #01cdfe)` 
+              : config.color,
+            boxShadow: isVapor 
+              ? '0 0 12px #ff71ce, 0 0 4px #01cdfe' 
+              : `0 0 8px ${config.color}44`,
             height: '20%',
             animation: `visualizerBar ${config.speed} ${config.curve} infinite alternate`,
-            animationDelay: `${i * (parseFloat(config.speed) / config.count)}s`
+            animationDelay: `${i * (parseFloat(config.speed) / config.count)}s`,
+            filter: isVapor ? 'contrast(1.2) saturate(1.5)' : 'none'
           }}
         />
       ))}
+      {isVapor && (
+        <div className="absolute inset-0 bg-gradient-to-t from-[#ff71ce]/20 to-transparent pointer-events-none blur-xl -z-10" />
+      )}
     </div>
   );
 };
@@ -452,6 +488,12 @@ const LoadingScreen: React.FC<{ progress: number, logIndex: number, genres: stri
           50% { opacity: 0.8; transform: scale(0.98); filter: blur(0.5px); }
           51% { opacity: 1; transform: scale(1.02); filter: blur(0px); }
           52% { opacity: 0.9; transform: scale(1); }
+        }
+        @keyframes vaporGlitch {
+          0%, 90%, 100% { transform: translateX(0) skew(0deg); filter: hue-rotate(0deg); }
+          92% { transform: translateX(2px) skew(5deg); filter: hue-rotate(90deg); }
+          94% { transform: translateX(-2px) skew(-5deg); filter: hue-rotate(-90deg); }
+          96% { transform: translateX(1px) skew(2deg); filter: hue-rotate(45deg); }
         }
       `}</style>
     </div>
